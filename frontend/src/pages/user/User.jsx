@@ -61,7 +61,7 @@ const User = () => {
             {/* Edit Profile Button - Only show if user is viewing their own profile */}
             {isLoggedIn && loggedInUsername === username && (
               <button
-                onClick={() => history.push('/profile')}
+                onClick={() => history.push('/account/me')}
                 className="bg-gold-btn hover:bg-gold-btn-hover text-black font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

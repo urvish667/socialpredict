@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
 import { Route, Switch, Redirect } from 'react-router-dom';
 import { useAuth } from './AuthContent';
-import ChangePassword from '../pages/changepassword/ChangePassword';
+import ProfileSettingsPage from '../pages/account/ProfileSettingsPage';
+import WalletPage from '../pages/account/WalletPage';
+import PlaceholderPage from '../pages/account/PlaceholderPage';
 import Profile from '../pages/profile/Profile';
-import Markets from '../pages/markets/Markets';
+import ChangePassword from '../pages/changepassword/ChangePassword';
+import Portfolio from '../pages/portfolio/Portfolio';
 import Polls from '../pages/polls/Polls';
 import Notifications from '../pages/notifications/Notifications';
 import Create from '../pages/create/Create';
 import About from '../pages/about/About';
 import Stats from '../pages/stats/Stats';
-import Home from '../pages/home/Home';
 import LandingPage from '../pages/home/LandingPage';
 import MarketDetails from '../pages/marketDetails/MarketDetails';
 import User from '../pages/user/User';
@@ -19,6 +21,7 @@ import NotFound from '../pages/notfound/NotFound';
 import LoginForm from '../pages/auth/LoginForm';
 import AdminLoginForm from '../pages/auth/AdminLoginForm';
 import SignupFlow from '../pages/auth/SignupFlow';
+import ChallengesPage from '../pages/home/ChallengesPage';
 
 const AppRoutes = () => {
   const auth = useAuth();
@@ -47,11 +50,12 @@ const AppRoutes = () => {
           <MarketDetails />
         )}
       </Route>
-      <Route exact path='/markets'>
+      {/* Markets is now part of the home page (LandingPage) at / */}
+      <Route exact path='/challenges'>
         {isLoggedIn && mustChangePassword ? (
           <Redirect to='/changepassword' />
         ) : (
-          <Markets />
+          <ChallengesPage />
         )}
       </Route>
       <Route exact path='/polls'>
@@ -103,7 +107,28 @@ const AppRoutes = () => {
         )}
       </Route>
       <Route exact path='/profile'>
-        {isRegularUser ? <Profile /> : <Redirect to='/' />}
+        <Redirect to='/account/me' />
+      </Route>
+      <Route exact path='/account'>
+        {isRegularUser ? <Redirect to='/account/me' /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/account/me'>
+        {isRegularUser ? <ProfileSettingsPage /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/account/wallet'>
+        {isRegularUser ? <WalletPage /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/account/earn'>
+        {isRegularUser ? <PlaceholderPage title="Earn Coins" /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/account/xp'>
+        {isRegularUser ? <PlaceholderPage title="XP Points" /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/account/security'>
+        {isRegularUser ? <ChangePassword /> : <Redirect to='/' />}
+      </Route>
+      <Route exact path='/portfolio'>
+        {isRegularUser ? <Portfolio /> : <Redirect to='/' />}
       </Route>
 
       {/* Admin Routes */}
@@ -129,11 +154,10 @@ const AppRoutes = () => {
       </Route>
 
       {/* Home Route */}
+      {/* Unified Home Route - Always LandingPage */}
       <Route exact path='/'>
         {isLoggedIn && mustChangePassword ? (
           <Redirect to='/changepassword' />
-        ) : isLoggedIn ? (
-          <Home />
         ) : (
           <LandingPage />
         )}

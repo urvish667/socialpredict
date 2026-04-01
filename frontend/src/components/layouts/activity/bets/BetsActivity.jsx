@@ -20,41 +20,43 @@ const BetsActivityLayout = ({ marketId, refreshTrigger }) => {
     }, [marketId, refreshTrigger]);
 
     return (
-        <div className="p-4">
-            <div className="sp-grid-bets-header">
-                <div>Username</div>
-                <div className="text-center">Outcome</div>
-                <div className="text-right">Amount</div>
-                <div className="text-right">After</div>
-                <div className="text-right">Placed</div>
+        <div className="p-0">
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-4 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
+                <div>User</div>
+                <div className="text-center">Side</div>
+                <div className="text-right">Amt</div>
+                <div className="hidden sm:block text-right">After</div>
+                <div className="text-right">Date</div>
             </div>
             {bets.map((bet, index) => (
-                <div key={index} className="sp-grid-bets-row mt-2">
+                <div key={index} className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-4 px-4 py-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors items-center">
                     {/* Username */}
-                    <div className="sp-cell-username">
-                        <div className="sp-ellipsis text-xs sm:text-sm font-medium">
-                            <Link to={`/user/${bet.username}`} className="text-blue-500 hover:text-blue-400 transition-colors">
-                                {bet.username}
-                            </Link>
-                        </div>
+                    <div className="min-w-0">
+                        <Link to={`/user/${bet.username}`} className="text-[#ddff5c] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-colors truncate block">
+                            @{bet.username}
+                        </Link>
                     </div>
 
                     {/* Outcome */}
-                    <div className="justify-self-start sm:justify-self-center">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${bet.outcome === 'YES' ? 'bg-green-600' : 'bg-red-600'} text-white`}>
+                    <div className="text-center">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border ${bet.outcome === 'YES' ? 'border-[#34d399]/30 bg-[#34d399]/10 text-[#34d399]' : 'border-[#f87171]/30 bg-[#f87171]/10 text-[#f87171]'}`}>
                             {bet.outcome}
                         </span>
                     </div>
 
                     {/* Amount */}
-                    <div className="sp-cell-num text-xs sm:text-sm text-gray-300">{bet.amount}</div>
+                    <div className="text-right text-xs font-black tracking-widest text-white">
+                        {bet.amount}
+                    </div>
 
                     {/* After (sm+) */}
-                    <div className="hidden sm:block sp-cell-num text-gray-300">{bet.probability.toFixed(2)}</div>
+                    <div className="hidden sm:block text-right text-xs font-black tracking-widest text-white/50">
+                        {(bet.probability * 100).toFixed(0)}%
+                    </div>
 
-                    {/* Placed (stack full width on xs) */}
-                    <div className="col-span-3 sm:col-span-1 text-right sp-subline">
-                        {new Date(bet.placedAt).toLocaleString()}
+                    {/* Placed */}
+                    <div className="text-right text-[10px] font-black uppercase tracking-widest text-white/30">
+                        {new Date(bet.placedAt).toLocaleDateString(undefined, {month:'short', day:'2-digit'})}
                     </div>
                 </div>
             ))}

@@ -19,6 +19,7 @@ export const useMarketDetails = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
   const [currentProbability, setCurrentProbability] = useState(0);
+  const [optionProbabilities, setOptionProbabilities] = useState({});
   const { marketId } = useParams();
   const [triggerRefresh, setTriggerRefresh] = useState(false);
 
@@ -38,6 +39,9 @@ export const useMarketDetails = () => {
         const data = await response.json();
         setDetails(data);
         setCurrentProbability(calculateCurrentProbability(data));
+        if (data.optionProbabilities) {
+            setOptionProbabilities(data.optionProbabilities);
+        }
       } catch (error) {
         console.error('Error fetching market data:', error);
       }
@@ -50,5 +54,5 @@ export const useMarketDetails = () => {
     setTriggerRefresh((prev) => !prev);
   };
 
-  return { details, isLoggedIn, token, refetchData, currentProbability };
+  return { details, isLoggedIn, token, refetchData, currentProbability, optionProbabilities };
 };

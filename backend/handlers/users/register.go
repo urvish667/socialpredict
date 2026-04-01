@@ -6,10 +6,12 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"socialpredict/middleware"
 	"socialpredict/models"
 	"socialpredict/security"
 	"socialpredict/setup"
 	"socialpredict/util"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,10 +26,13 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	securityService := security.NewSecurityService()
 
 	var req struct {
-		Username    string `json:"username" validate:"required,min=3,max=30,username"`
-		Email       string `json:"email" validate:"required,email"`
-		PhoneNumber string `json:"phoneNumber" validate:"required"`
-		Password    string `json:"password" validate:"required,min=6"`
+		Username     string `json:"username" validate:"required,min=3,max=30,username"`
+		FullName     string `json:"fullName" validate:"required"`
+		DateOfBirth  string `json:"dateOfBirth" validate:"required"`
+		Email        string `json:"email" validate:"required,email"`
+		PhoneNumber  string `json:"phoneNumber" validate:"required"`
+		Password     string `json:"password" validate:"required,min=6"`
+		ReferralCode string `json:"referralCode"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -48,33 +53,70 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	req.Username = sanitizedUsername
 
 	db := util.GetDB()
+	var existingUser models.User
+	result := db.Where("username = ? OR email = ? OR phone_number = ?", req.Username, req.Email, req.PhoneNumber).First(&existingUser)
 
-	// Check if user exists by username, email, or phone
-	var count int64
-	db.Model(&models.User{}).Where("username = ? OR email = ? OR phone_number = ?", req.Username, req.Email, req.PhoneNumber).Count(&count)
-	if count > 0 {
-		http.Error(w, "Username, email, or phone number already in use", http.StatusConflict)
+	if result.Error == nil {
+		if existingUser.IsVerified {
+			http.Error(w, "Username, email, or phone number already in use", http.StatusConflict)
+			return
+		}
+
+		// User is unverified, update OTP and resend
+		otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+		existingUser.OTPCode = otp
+		existingUser.OTPExpiry = time.Now().Add(10 * time.Minute).Unix()
+
+		// Update details if they changed between retries
+		existingUser.PublicUser.Username = req.Username
+		existingUser.PublicUser.FullName = req.FullName
+		existingUser.PublicUser.DateOfBirth = req.DateOfBirth
+		existingUser.PrivateUser.Email = strings.ToLower(strings.TrimSpace(req.Email))
+		existingUser.PrivateUser.PhoneNumber = req.PhoneNumber
+		existingUser.HashPassword(req.Password)
+
+		// Update referral code if provided and not already set
+		if req.ReferralCode != "" && existingUser.ReferredBy == "" {
+			existingUser.ReferredBy = req.ReferralCode
+		}
+
+		if err := db.Save(&existingUser).Error; err != nil {
+			http.Error(w, "Failed to update registration", http.StatusInternalServerError)
+			log.Printf("UpdateRegistration error: %v", err)
+			return
+		}
+
+		// MOCK SMS SENDING
+		log.Printf("========== SMS PROVIDER MOCK (RESEND) ==========")
+		log.Printf("To: %s", req.PhoneNumber)
+		log.Printf("Message: Your Stadia Emerald verification code is: %s", otp)
+		log.Printf("===============================================")
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Registration updated. New OTP sent."})
 		return
 	}
-
-	// Generate 6-digit OTP
-	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
-	expiry := time.Now().Add(10 * time.Minute).Unix() // 10 minute expiry
 
 	// Calculate initial account balance for display purposes later, though actual deposit is on verify
 	appConfig, _ := setup.LoadEconomicsConfig()
 	
 	// Create Unverified User
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+	expiry := time.Now().Add(10 * time.Minute).Unix() // 10 minute expiry
+
 	user := models.User{
 		PublicUser: models.PublicUser{
 			Username:              req.Username,
+			FullName:              req.FullName,
+			DateOfBirth:           req.DateOfBirth,
 			DisplayName:           util.UniqueDisplayName(db),
-			UserType:              "REGULAR",
+			UserType:              models.RoleUser,
 			InitialAccountBalance: appConfig.Economics.User.InitialAccountBalance,
 			AccountBalance:        0, // Awarded ONLY on verification
+			ReferredBy:            req.ReferralCode,
 		},
 		PrivateUser: models.PrivateUser{
-			Email:         req.Email,
+			Email:         strings.ToLower(strings.TrimSpace(req.Email)),
 			PhoneNumber:   req.PhoneNumber,
 			EmailVerified: false,
 			PhoneVerified: false,
@@ -82,6 +124,7 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 			OTPCode:       otp,
 			OTPExpiry:     expiry,
 		},
+		IsVerified:         false,
 		MustChangePassword: false, // Normal users don't need to change password on signup
 	}
 
@@ -113,6 +156,7 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
+		Email       string `json:"email"`
 		PhoneNumber string `json:"phoneNumber" validate:"required"`
 		OTP         string `json:"otp" validate:"required,len=6"`
 	}
@@ -125,8 +169,15 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	db := util.GetDB()
 	var user models.User
 
+	query := db
+	if email := strings.ToLower(strings.TrimSpace(req.Email)); email != "" {
+		query = query.Where("LOWER(email) = ?", email)
+	} else {
+		query = query.Where("phone_number = ?", req.PhoneNumber)
+	}
+
 	// Find the unverified user
-	if err := db.Where("phone_number = ?", req.PhoneNumber).First(&user).Error; err != nil {
+	if err := query.First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
@@ -136,7 +187,7 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if already verified
-	if user.PhoneVerified {
+	if user.IsVerified {
 		http.Error(w, "User is already verified", http.StatusConflict)
 		return
 	}
@@ -155,6 +206,7 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Verification Success
 	// 1. Mark verified
+	user.IsVerified = true
 	user.PhoneVerified = true
 	user.EmailVerified = true // Assuming email is verified synchronously for this spec
 	
@@ -181,10 +233,21 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tokenString, err := middleware.CreateTokenString(&user)
+	if err != nil {
+		http.Error(w, "Failed to create token", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	// Instruct frontend to now login with stored credentials natively.
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "User verified successfully.",
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":            "User verified successfully.",
+		"token":              tokenString,
+		"username":           user.Username,
+		"role":               user.Role,
+		"usertype":           user.Role,
+		"isVerified":         user.IsVerified,
+		"mustChangePassword": user.MustChangePassword,
 	})
 }
 

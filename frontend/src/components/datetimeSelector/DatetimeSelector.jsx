@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const DatetimeSelector = ({ value, onChange }) => {
+const DatetimeSelector = ({ value, onChange, className = '' }) => {
     const [internalValue, setInternalValue] = useState(value);
 
     // Set internalValue when component mounts
@@ -19,22 +19,19 @@ const DatetimeSelector = ({ value, onChange }) => {
 
     const handleChange = (event) => {
         setInternalValue(event.target.value);
-        onChange(event); // Propagate changes to parent
+        if (onChange) {
+            onChange(event); // Propagate changes to parent
+        }
     };
 
     return (
-        <div className="p-4 bg-custom-gray-light text-white rounded-lg shadow-md max-w-md mx-auto my-4">
-            <label htmlFor="datetime-selector" className="block mb-2 font-bold">
-                Select Date and Time:
-            </label>
-            <input
-                id="datetime-selector"
-                type="datetime-local"
-                className="w-full p-2 rounded border-gray-300 shadow-sm bg-white text-black"
-                value={internalValue}
-                onChange={handleChange}
-            />
-        </div>
+        <input
+            id="datetime-selector"
+            type="datetime-local"
+            className={`w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-none text-sm focus:outline-none focus:border-[#ddff5c]/30 transition-all placeholder:text-white/20 [color-scheme:dark] ${className}`}
+            value={internalValue}
+            onChange={handleChange}
+        />
     );
 };
 

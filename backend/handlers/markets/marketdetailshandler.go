@@ -24,82 +24,118 @@ type MarketDetailHandlerResponse struct {
 	NumUsers           int                                       `json:"numUsers"`
 	TotalVolume        int64                                     `json:"totalVolume"`
 	MarketDust         int64                                     `json:"marketDust"`
+	OptionProbabilities map[string]float64                       `json:"optionProbabilities,omitempty"`
 }
 
 func MarketDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	marketId := vars["marketId"]
+	marketIdOrSlug := vars["marketId"]
 
-	// Parsing a String to an Unsigned Integer, base10, 64bits
-	marketIDUint64, err := strconv.ParseUint(marketId, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid market ID", http.StatusBadRequest)
-		return
-	}
-
-	// 32-bit platform compatibility check (Convention CONV-32BIT-001 in README-CONVENTIONS.md)
-	// Platform detection constants for 32-bit compatibility check
-	const (
-		bitsInByte                  = 8
-		bytesInUint32               = 4
-		rightShiftFor64BitDetection = 63
-		baseBitWidth                = 32
-	)
-
-	// Detect platform bit width using named constants
-	maxUintValue := ^uint(0)
-	platformBitWidth := baseBitWidth << (maxUintValue >> rightShiftFor64BitDetection)
-	isPlatform32Bit := platformBitWidth == baseBitWidth
-
-	// Validate that the uint64 value fits in platform uint
-	if isPlatform32Bit && marketIDUint64 > math.MaxUint32 {
-		http.Error(w, "Market ID out of range", http.StatusBadRequest)
-		return
-	}
-	marketIDUint := uint(marketIDUint64)
-
-	// open up database to utilize connection pooling
 	db := util.GetDB()
+
+	// Try numeric ID first, then slug
+	var publicResponseMarket marketpublicresponse.PublicResponseMarket
+	var err error
+	var marketIDUint uint
+
+	if _, parseErr := strconv.ParseUint(marketIdOrSlug, 10, 64); parseErr == nil {
+		// It's a numeric ID
+		marketIDUint64, _ := strconv.ParseUint(marketIdOrSlug, 10, 64)
+
+		// 32-bit platform compatibility check
+		const (
+			bitsInByte                  = 8
+			bytesInUint32               = 4
+			rightShiftFor64BitDetection = 63
+			baseBitWidth                = 32
+		)
+		maxUintValue := ^uint(0)
+		platformBitWidth := baseBitWidth << (maxUintValue >> rightShiftFor64BitDetection)
+		isPlatform32Bit := platformBitWidth == baseBitWidth
+
+		if isPlatform32Bit && marketIDUint64 > math.MaxUint32 {
+			http.Error(w, "Market ID out of range", http.StatusBadRequest)
+			return
+		}
+		marketIDUint = uint(marketIDUint64)
+
+		publicResponseMarket, err = marketpublicresponse.GetPublicResponseMarketByID(db, marketIdOrSlug)
+	} else {
+		// It's a slug
+		publicResponseMarket, err = marketpublicresponse.GetPublicResponseMarketBySlug(db, marketIdOrSlug)
+		if err == nil {
+			marketIDUint = uint(publicResponseMarket.ID)
+		}
+	}
+
+	if err != nil {
+		http.Error(w, "Market not found", http.StatusNotFound)
+		return
+	}
 
 	// Fetch all bets for the market
 	bets := tradingdata.GetBetsForMarket(db, marketIDUint)
 
-	// return the PublicResponse type with information about the market
-	publicResponseMarket, err := marketpublicresponse.GetPublicResponseMarketByID(db, marketId)
-	if err != nil {
-		http.Error(w, "Invalid market ID", http.StatusBadRequest)
-		return
-	}
-
-	// Calculate probabilities using the fetched bets
-	probabilityChanges := wpam.CalculateMarketProbabilitiesWPAM(publicResponseMarket.CreatedAt, bets)
-
-	// find the number of users on the market
-	numUsers := models.GetNumMarketUsers(bets)
-
-	// market volume represents actual liquidity remaining (including dust)
-	marketVolume := marketmath.GetMarketVolumeWithDust(bets)
-	if err != nil {
-		// Handle error
-	}
-
-	// calculate market dust from selling transactions
-	marketDust := marketmath.GetMarketDust(bets)
-
-	// get market creator
-	// Fetch the Creator's public information using utility function
-	publicCreator := publicuser.GetPublicUserInfo(db, publicResponseMarket.CreatorUsername)
-
-	// Manually construct the response
+	// Build response based on outcome type
 	response := MarketDetailHandlerResponse{
-		Market:             publicResponseMarket,
-		Creator:            publicCreator,
-		ProbabilityChanges: probabilityChanges,
-		NumUsers:           numUsers,
-		TotalVolume:        marketVolume,
-		MarketDust:         marketDust,
+		Market:  publicResponseMarket,
+		Creator: publicuser.GetPublicUserInfo(db, publicResponseMarket.CreatorUsername),
 	}
+
+	if publicResponseMarket.OutcomeType == models.OutcomeTypeMultipleChoice {
+		// For multiple choice: calculate simple bet-share probabilities per option
+		optionProbs := calculateMultipleChoiceProbabilities(bets, publicResponseMarket.Options)
+		response.OptionProbabilities = optionProbs
+		// Still calculate standard probability changes for chart compatibility
+		if len(bets) > 0 {
+			response.ProbabilityChanges = wpam.CalculateMarketProbabilitiesWPAM(publicResponseMarket.CreatedAt, bets)
+		}
+	} else {
+		// Binary: use existing WPAM probability
+		response.ProbabilityChanges = wpam.CalculateMarketProbabilitiesWPAM(publicResponseMarket.CreatedAt, bets)
+	}
+
+	response.NumUsers = models.GetNumMarketUsers(bets)
+	response.TotalVolume = marketmath.GetMarketVolumeWithDust(bets)
+	response.MarketDust = marketmath.GetMarketDust(bets)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// calculateMultipleChoiceProbabilities computes simple bet-share probabilities for MC markets.
+// Each option's probability = (total amount bet on that option) / (total amount bet across all options).
+func calculateMultipleChoiceProbabilities(bets []models.Bet, options []marketpublicresponse.PublicResponseMarketOption) map[string]float64 {
+	result := make(map[string]float64)
+
+	// Initialize all options with 0
+	for _, opt := range options {
+		result[opt.Label] = 0
+	}
+
+	// Sum up bets per outcome
+	totalAmount := int64(0)
+	optionAmounts := make(map[string]int64)
+
+	for _, bet := range bets {
+		if bet.Amount > 0 { // Only count buy bets
+			optionAmounts[bet.Outcome] += bet.Amount
+			totalAmount += bet.Amount
+		}
+	}
+
+	if totalAmount == 0 {
+		// Equal probability if no bets
+		equalProb := 1.0 / float64(len(options))
+		for _, opt := range options {
+			result[opt.Label] = equalProb
+		}
+		return result
+	}
+
+	for _, opt := range options {
+		result[opt.Label] = float64(optionAmounts[opt.Label]) / float64(totalAmount)
+	}
+
+	return result
 }

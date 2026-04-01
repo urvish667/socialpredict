@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './helpers/AuthContent';
 import Footer from './components/footer/Footer';
 import AppRoutes from './helpers/AppRoutes';
 import '../index.css';
-import Sidebar from './components/sidebar/Sidebar';
+import TopNavbar from './components/header/TopNavbar';
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -25,28 +25,30 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
+
 function AppLayout() {
   const auth = useAuth();
   const location = useLocation();
   const isLoggedIn = !!auth.username;
-  const isLandingPage = location.pathname === '/' && !isLoggedIn;
   const isAuthPage = ['/login', '/register', '/admin/login'].includes(location.pathname);
 
-  if (isLandingPage || isAuthPage) {
+  if (isAuthPage) {
     return (
-      <div className='App bg-background min-h-screen text-on-background'>
+      <div className='App bg-[#0b0f0e] min-h-screen text-on-surface font-body font-satoshi antialiased'>
         <AppRoutes />
       </div>
     );
   }
 
-  // Standard logged-in or global layout
+  // Unified Layout for the app without Sidebar
   return (
-    <div className='App bg-primary-background min-h-screen text-white flex flex-col md:flex-row'>
-      <Sidebar />
-      <div className='flex flex-col flex-grow w-full'>
-        <main className='flex-grow p-4 sm:p-6 overflow-y-auto w-full'>
-          <AppRoutes />
+    <div className='App bg-[#0b0f0e] min-h-screen text-on-surface font-body font-satoshi antialiased flex flex-col'>
+      <TopNavbar />
+      <div className='flex flex-grow overflow-hidden'>
+        <main className={`flex-grow overflow-y-auto`}>
+          <div className='max-w-[1440px] mx-auto w-full'>
+            <AppRoutes />
+          </div>
         </main>
       </div>
     </div>

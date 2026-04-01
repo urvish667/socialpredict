@@ -24,7 +24,7 @@ const LoginForm = () => {
                 if (auth.usertype === "admin") {
                     history.push('/admin/dashboard');
                 } else {
-                    history.push('/home'); 
+                    history.push('/'); 
                 }
             } else {
                 setError('Invalid credentials.');
@@ -38,67 +38,65 @@ const LoginForm = () => {
 
     return (
         <AuthLayout>
-            <div className="w-full max-w-md glass-panel p-8 md:p-10 rounded-xl relative border border-outline-variant/10 shadow-2xl">
+            <div className="w-full bg-[#131313] p-8 md:p-10 rounded-sm border border-[#484848]/15 shadow-2xl">
                 <div className="mb-8">
-                    <h2 className="font-headline text-3xl font-bold text-on-surface mb-2">Login</h2>
-                    <p className="font-body text-on-surface-variant text-sm flex justify-between">
-                        <span>Enter your credentials.</span>
-                        <Link to="#" className="text-xs font-bold text-primary tracking-widest uppercase hover:text-white transition-colors text-right flex items-end">Forgot?</Link>
+                    <h2 className="font-headline text-3xl font-black text-[#fafdfa] mb-2">Login</h2>
+                    <p className="font-body text-[#a8acaa] text-sm">
+                        Welcome back to ZuriMarket.
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {error && (
-                        <div className="p-3 bg-error-container/20 border border-error/30 text-error-dim rounded text-sm font-medium">
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-sm text-xs font-bold uppercase tracking-wider">
                             {error}
                         </div>
                     )}
                     
-                    <div className="space-y-1.5">
-                        <label className="block font-label text-xs font-medium text-on-surface-variant uppercase tracking-widest" htmlFor="identifier">Username or Email</label>
+                    <div className="space-y-2">
+                        <label className="block font-body text-[10px] font-black text-[#a8acaa] uppercase tracking-[0.2em]" htmlFor="identifier">Username or Email</label>
                         <input
                             required
-                            className="w-full bg-surface-container-highest border-none rounded p-4 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/30 transition-all outline-none"
-                            id="identifier" name="identifier" placeholder="architect@stadia.io" type="text"
+                            className="w-full bg-[#0b0f0e] border border-white/5 rounded-sm p-4 text-[#fafdfa] placeholder:text-white/20 focus:ring-1 focus:ring-[#ddff5c]/30 transition-all outline-none font-body text-sm"
+                            id="identifier" name="identifier" placeholder="architect@zurimarket.com" type="text"
                             value={identifier} onChange={(e) => setIdentifier(e.target.value)}
                         />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="block font-label text-xs font-medium text-on-surface-variant uppercase tracking-widest" htmlFor="password">Password</label>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-end">
+                            <label className="block font-body text-[10px] font-black text-[#a8acaa] uppercase tracking-[0.2em]" htmlFor="password">Password</label>
+                            <Link to="#" className="text-[10px] font-black text-[#ddff5c] uppercase tracking-widest hover:underline">Forgot?</Link>
+                        </div>
                         <div className="relative">
                             <input
                                 required
-                                className="w-full bg-surface-container-highest border-none rounded p-4 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/30 transition-all outline-none"
+                                className="w-full bg-[#0b0f0e] border border-white/5 rounded-sm p-4 text-[#fafdfa] placeholder:text-white/20 focus:ring-1 focus:ring-[#ddff5c]/30 transition-all outline-none font-body text-sm"
                                 id="password" name="password" placeholder="••••••••••••" type={showPassword ? "text" : "password"}
                                 value={password} onChange={(e) => setPassword(e.target.value)}
                             />
-                            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
+                            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#ddff5c] transition-colors" type="button">
                                 <span className="material-symbols-outlined text-sm">{showPassword ? "visibility_off" : "visibility"}</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-2">
                         <button
                             disabled={loading}
-                            className="w-full primary-gradient py-4 rounded font-headline font-bold text-on-primary hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:grayscale"
+                            className="w-full bg-[#ddff5c] text-[#0b0f0e] py-4 rounded-sm font-body font-black uppercase tracking-widest text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
                             type="submit"
                         >
                             {loading ? 'Authenticating...' : 'Sign In'}
-                            {!loading && <span className="material-symbols-outlined">trending_flat</span>}
                         </button>
                     </div>
                 </form>
 
-                <div className="mt-8 pt-8 border-t border-outline-variant/10 flex flex-col items-center gap-4">
-                    <p className="font-body text-sm text-on-surface-variant">
-                        New to the platform?
-                        <Link to="/register" className="text-primary font-bold hover:underline ml-1">Create an account</Link>
+                <div className="mt-8 pt-8 border-t border-white/5 text-center">
+                    <p className="font-body text-sm text-[#a8acaa]">
+                        New to ZuriMarket?
+                        <Link to="/register" className="text-[#ddff5c] font-black ml-2 hover:underline">Create Account</Link>
                     </p>
-                    <div className="flex items-center gap-6 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all">
-                        <Link to="/admin/login" className="text-[10px] font-label text-on-surface-variant tracking-tighter uppercase hover:text-primary">Admin Portal</Link>
-                    </div>
                 </div>
             </div>
         </AuthLayout>

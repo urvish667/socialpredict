@@ -44,16 +44,16 @@ const LeaderboardActivity = ({ marketId, market }) => {
     };
 
     const getPositionBadge = (position) => {
-        const baseClasses = "px-2 py-1 rounded text-xs font-bold";
+        const baseClasses = "px-2 py-0.5 border text-[10px] font-black uppercase tracking-widest";
         switch (position) {
             case 'YES':
-                return `${baseClasses} bg-green-600 text-white`;
+                return `${baseClasses} border-[#34d399]/30 bg-[#34d399]/10 text-[#34d399]`;
             case 'NO':
-                return `${baseClasses} bg-red-600 text-white`;
+                return `${baseClasses} border-[#f87171]/30 bg-[#f87171]/10 text-[#f87171]`;
             case 'NEUTRAL':
-                return `${baseClasses} bg-yellow-600 text-white`;
+                return `${baseClasses} border-yellow-500/30 bg-yellow-500/10 text-yellow-500`;
             default:
-                return `${baseClasses} bg-gray-600 text-white`;
+                return `${baseClasses} border-gray-500/30 bg-gray-500/10 text-gray-400`;
         }
     };
 
@@ -91,42 +91,48 @@ const LeaderboardActivity = ({ marketId, market }) => {
     const labels = market ? getMarketLabels(market) : { yes: "YES", no: "NO" };
 
     return (
-        <div className="p-4">
+        <div className="p-0">
             {/* Header */}
-            <div className="sp-grid-leaderboard-header">
+            <div className="grid grid-cols-2 sm:grid-cols-7 gap-2 sm:gap-4 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10 hidden sm:grid">
                 <div>Rank</div>
                 <div>User</div>
                 <div>Position</div>
                 <div className="text-right">Profit</div>
-                <div className="text-right">Current Value</div>
-                <div className="text-right">Total Spent</div>
-                <div>Shares</div>
+                <div className="text-right">Value</div>
+                <div className="text-right">Spent</div>
+                <div className="text-right">Shares</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10 sm:hidden">
+                <div>User</div>
+                <div className="text-right">Profit</div>
             </div>
 
             {/* Leaderboard Rows */}
             {leaderboard.map((entry, index) => (
-                <div key={entry.username} className="sp-grid-leaderboard-row mt-2">
+                <div key={entry.username} className="grid grid-cols-2 sm:grid-cols-7 gap-2 sm:gap-4 px-4 py-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors items-center">
+                    
                     {/* Rank + Username (xs) / Rank (sm+) */}
-                    <div className="flex items-center justify-start">
-                        <div className="text-white font-bold text-lg mr-2">
+                    <div className="flex items-center sm:hidden">
+                        <div className="text-[#ddff5c] font-black text-sm mr-2 w-6">
                             {getRankDisplay(entry.rank)}
                         </div>
-                        <div className="sm:hidden sp-cell-username">
-                            <div className="sp-ellipsis text-xs font-medium">
-                                <Link to={`/user/${entry.username}`} className="text-blue-500 hover:text-blue-400 transition-colors">
-                                    {entry.username}
-                                </Link>
-                            </div>
+                        <div className="min-w-0">
+                            <Link to={`/user/${entry.username}`} className="text-[#ddff5c] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-colors truncate block">
+                                @{entry.username}
+                            </Link>
                         </div>
                     </div>
 
+                    <div className="hidden sm:block text-white font-black text-sm">
+                        {getRankDisplay(entry.rank)}
+                    </div>
+
                     {/* Username (sm+) */}
-                    <div className="hidden sm:block sp-cell-username">
-                        <div className="sp-ellipsis font-medium">
-                            <Link to={`/user/${entry.username}`} className="text-blue-500 hover:text-blue-400 transition-colors">
-                                {entry.username}
-                            </Link>
-                        </div>
+                    <div className="hidden sm:block min-w-0">
+                        <Link to={`/user/${entry.username}`} className="text-[#ddff5c] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-colors truncate block">
+                            @{entry.username}
+                        </Link>
                     </div>
 
                     {/* Position (sm+) */}
@@ -138,28 +144,28 @@ const LeaderboardActivity = ({ marketId, market }) => {
 
                     {/* P&L + Subline (xs) / Profit (sm+) */}
                     <div className="text-right">
-                        <div className={`font-bold text-sm ${getProfitColor(entry.profit)}`}>
-                            {entry.profit >= 0 ? '+' : ''}{formatCurrency(entry.profit)}
+                        <div className={`font-black text-xs tracking-widest ${getProfitColor(entry.profit)}`}>
+                            {entry.profit >= 0 ? '+' : ''}🪙 {formatCurrency(Math.floor(entry.profit))}
                         </div>
-                        <div className="sm:hidden sp-subline">
-                            Pos {entry.position} • {entry.yesSharesOwned}Y {entry.noSharesOwned}N
+                        <div className="sm:hidden text-[10px] font-black tracking-widest uppercase text-white/30 mt-1">
+                            {entry.position} • {entry.yesSharesOwned}Y {entry.noSharesOwned}N
                         </div>
                     </div>
 
                     {/* Current Value (sm+) */}
-                    <div className="hidden sm:block sp-cell-num text-gray-300">
-                        {formatCurrency(entry.currentValue)}
+                    <div className="hidden sm:block text-right text-xs font-black tracking-widest text-white">
+                        🪙 {formatCurrency(Math.floor(entry.currentValue))}
                     </div>
 
                     {/* Total Spent (sm+) */}
-                    <div className="hidden sm:block sp-cell-num text-gray-300">
-                        {formatCurrency(entry.totalSpent)}
+                    <div className="hidden sm:block text-right text-xs font-black tracking-widest text-white/50">
+                        🪙 {formatCurrency(Math.floor(entry.totalSpent))}
                     </div>
 
                     {/* Shares (sm+) */}
-                    <div className="hidden sm:block text-gray-300 text-xs">
-                        <div>{labels.yes}: {entry.yesSharesOwned}</div>
-                        <div>{labels.no}: {entry.noSharesOwned}</div>
+                    <div className="hidden sm:block text-right text-[10px] font-black uppercase tracking-widest text-white/40">
+                        <div><span className="text-[#34d399]">Y</span> {Math.floor(entry.yesSharesOwned)}</div>
+                        <div><span className="text-[#f87171]">N</span> {Math.floor(entry.noSharesOwned)}</div>
                     </div>
                 </div>
             ))}

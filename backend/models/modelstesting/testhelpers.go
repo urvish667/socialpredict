@@ -52,6 +52,7 @@ func GenerateMarket(id int64, creatorUsername string) models.Market {
 		Description:        "Test Description",
 		OutcomeType:        "BINARY",
 		ResolutionDateTime: time.Now().Add(24 * time.Hour),
+		Status:             models.MarketStatusActive,
 		InitialProbability: 0.5,
 		CreatorUsername:    creatorUsername,
 	}
@@ -67,15 +68,18 @@ func GenerateUser(username string, startingBalance int64) models.User {
 		PublicUser: models.PublicUser{
 			Username:              username,
 			DisplayName:           fmt.Sprintf("%s_display_%s", username, uniqueId),
-			UserType:              "regular",
+			UserType:              models.RoleUser,
 			InitialAccountBalance: startingBalance,
 			AccountBalance:        startingBalance,
 		},
 		PrivateUser: models.PrivateUser{
-			Email:    fmt.Sprintf("%s_%s@example.com", username, uniqueId),
-			APIKey:   fmt.Sprintf("api-key-%s", uniqueId),
-			Password: "password",
+			Email:       fmt.Sprintf("%s_%s@example.com", username, uniqueId),
+			PhoneNumber: fmt.Sprintf("555%s", uniqueId),
+			APIKey:      fmt.Sprintf("api-key-%s", uniqueId),
+			Password:    "password",
 		},
+		Role:       models.RoleUser,
+		IsVerified: true,
 	}
 }
 

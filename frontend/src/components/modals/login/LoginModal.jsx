@@ -35,10 +35,10 @@ const LoginModal = ({ isOpen, onClose, onLogin, redirectAfterLogin }) => {
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-            <div className="relative bg-blue-900 p-6 rounded-lg text-white max-w-sm mx-auto">
-                <h2 className="text-xl mb-4">Login</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex justify-center items-center">
+            <div className="relative bg-[#131313] p-8 rounded-sm border border-[#484848]/15 text-[#fafdfa] max-w-sm w-full mx-4 shadow-2xl">
+                <h2 className="text-3xl font-headline font-black mb-6">Login</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <PersonInput value={username} onChange={(e) => {
                         setUsername(e.target.value);
                     }} />
@@ -51,8 +51,8 @@ const LoginModal = ({ isOpen, onClose, onLogin, redirectAfterLogin }) => {
                         <SiteButton type="submit">Login</SiteButton>
                     </div>
                 </form>
-                <button className="absolute top-0 right-0 mt-4 mr-4 text-gray-400 hover:text-white" onClick={onClose}>
-                    ✕
+                <button className="absolute top-4 right-4 text-white/40 hover:text-[#ddff5c] transition-colors" onClick={onClose}>
+                    <span className="material-symbols-outlined">close</span>
                 </button>
             </div>
         </div>,

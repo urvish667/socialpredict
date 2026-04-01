@@ -20,7 +20,7 @@ const MenuItems = ({ isLoggedIn, onLogout }) => {
                         <Logo />
                     </li>
                     <li>
-                        <Link to="/profile" className="header-link">Profile</Link>
+                        <Link to="/account/me" className="header-link">Profile</Link>
                     </li>
                     {/* ... other logged in menu items */}
                     <li>

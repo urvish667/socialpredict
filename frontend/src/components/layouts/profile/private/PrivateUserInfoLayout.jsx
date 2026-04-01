@@ -98,7 +98,26 @@ const PrivateUserInfoLayout = ({ userData }) => {
                     { label: 'Personal Emoji', value: personalEmoji, type: 'emoji' },
                     { label: 'Display Name', value: personalDisplayName, type: 'displayname' },
                     { label: 'Description', value: personalDescription, type: 'description' },
-                    { label: 'Personal Links', value: renderPersonalLinks(), type: 'links' }
+                    { label: 'Personal Links', value: renderPersonalLinks(), type: 'links' },
+                    {
+                        label: 'Referral Code',
+                        value: (
+                            <div className="flex items-center gap-2">
+                                <code className="bg-surface-container-highest px-2 py-1 rounded text-primary font-mono">{userData.referralCode}</code>
+                                <button
+                                    onClick={() => {
+                                        const link = `${window.location.origin}/signup?ref=${userData.referralCode}`;
+                                        navigator.clipboard.writeText(link);
+                                        alert('Referral link copied to clipboard!');
+                                    }}
+                                    className="p-1 hover:text-primary transition-colors"
+                                    title="Copy Referral Link"
+                                >
+                                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                                </button>
+                            </div>
+                        )
+                    }
                 ].map(item => (
                     <div key={item.label} className="py-4 grid grid-cols-3 items-center">
                         <span className="text-sm font-medium text-custom-gray-light">{item.label}:</span>

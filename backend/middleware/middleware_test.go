@@ -357,9 +357,8 @@ func TestAuthenticate_MiddlewareStructure(t *testing.T) {
 
 	middleware.ServeHTTP(w, req)
 
-	// The middleware currently doesn't implement any logic, so this is just testing structure
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 }
 

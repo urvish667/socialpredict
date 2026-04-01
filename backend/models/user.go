@@ -1,8 +1,17 @@
 package models
 
 import (
+	"fmt"
+	"math/rand"
+	"strings"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+)
+
+const (
+	RoleUser  = "USER"
+	RoleAdmin = "ADMIN"
 )
 
 type User struct {
@@ -10,24 +19,30 @@ type User struct {
 	ID int64 `json:"id" gorm:"primary_key"`
 	PublicUser
 	PrivateUser
-	MustChangePassword bool `json:"mustChangePassword" gorm:"default:false"`
+	Role               string `json:"role" gorm:"not null;default:USER"`
+	IsVerified         bool   `json:"isVerified" gorm:"default:false"`
+	MustChangePassword bool   `json:"mustChangePassword" gorm:"default:false"`
 }
+
+const referralCodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type PublicUser struct {
 	Username              string `json:"username" gorm:"unique;not null"`
 	DisplayName           string `json:"displayname" gorm:"unique;not null"`
+	FullName              string `json:"fullName"`
+	DateOfBirth           string `json:"dateOfBirth"`
+	Gender                string `json:"gender"`
+	StreetAddress         string `json:"streetAddress"`
+	Country               string `json:"country"`
+	State                 string `json:"state"`
+	City                  string `json:"city"`
+	PostalCode            string `json:"postalCode"`
 	UserType              string `json:"usertype" gorm:"not null"`
 	InitialAccountBalance int64  `json:"initialAccountBalance"`
 	AccountBalance        int64  `json:"accountBalance"`
-	PersonalEmoji         string `json:"personalEmoji,omitempty"`
-	Description           string `json:"description,omitempty"`
-	PersonalLink1         string `json:"personalink1,omitempty"`
-	PersonalLink2         string `json:"personalink2,omitempty"`
-	PersonalLink3         string `json:"personalink3,omitempty"`
-	PersonalLink4         string `json:"personalink4,omitempty"`
 	
 	// Referral & Growth Engine
-	ReferralCode          string `json:"referralCode" gorm:"uniqueIndex"`
+	ReferralCode          string `json:"referralCode"`
 	ReferredBy            string `json:"referredBy,omitempty"`
 	HasPlacedBet          bool   `json:"hasPlacedBet" gorm:"default:false"`
 	CurrentStreak         int    `json:"currentStreak" gorm:"default:0"`
@@ -35,7 +50,7 @@ type PublicUser struct {
 
 type PrivateUser struct {
 	Email         string `json:"email" gorm:"unique;not null"`
-	PhoneNumber   string `json:"phoneNumber" gorm:"uniqueIndex"`
+	PhoneNumber   string `json:"phoneNumber"`
 	EmailVerified bool   `json:"emailVerified" gorm:"default:false"`
 	PhoneVerified bool   `json:"phoneVerified" gorm:"default:false"`
 	APIKey        string `json:"apiKey,omitempty" gorm:"unique"`
@@ -58,4 +73,75 @@ func (u *User) HashPassword(password string) error {
 func (u *User) CheckPasswordHash(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	return err == nil
+}
+
+func (u *User) BeforeSave(tx *gorm.DB) error {
+	u.SyncRoleFields()
+	u.SyncVerificationFields()
+	return nil
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if strings.TrimSpace(u.ReferralCode) == "" {
+		code, err := GenerateUniqueReferralCode(tx)
+		if err != nil {
+			return err
+		}
+		u.ReferralCode = code
+	}
+
+	return u.BeforeSave(tx)
+}
+
+func (u *User) AfterFind(tx *gorm.DB) error {
+	u.SyncRoleFields()
+	u.SyncVerificationFields()
+	return nil
+}
+
+func (u *User) SyncRoleFields() {
+	switch {
+	case strings.EqualFold(u.Role, RoleAdmin), strings.EqualFold(u.UserType, RoleAdmin):
+		u.Role = RoleAdmin
+		if strings.TrimSpace(u.UserType) == "" {
+			u.UserType = RoleAdmin
+		}
+	default:
+		u.Role = RoleUser
+		if strings.TrimSpace(u.UserType) == "" {
+			u.UserType = RoleUser
+		}
+	}
+}
+
+func (u *User) SyncVerificationFields() {
+	if !u.IsVerified && (u.EmailVerified || u.PhoneVerified) {
+		u.IsVerified = true
+	}
+	if u.IsVerified {
+		u.EmailVerified = true
+	}
+}
+
+func GenerateUniqueReferralCode(tx *gorm.DB) (string, error) {
+	for i := 0; i < 20; i++ {
+		code := RandomReferralCode()
+		var count int64
+		if err := tx.Model(&User{}).Where("referral_code = ?", code).Count(&count).Error; err != nil {
+			return "", err
+		}
+		if count == 0 {
+			return code, nil
+		}
+	}
+
+	return "", fmt.Errorf("unable to generate unique referral code")
+}
+
+func RandomReferralCode() string {
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = referralCodeChars[rand.Intn(len(referralCodeChars))]
+	}
+	return string(b)
 }

@@ -146,6 +146,12 @@ func Start() {
 	// Apply security middleware to all routes
 	securityMiddleware := securityService.SecurityMiddleware()
 	loginSecurityMiddleware := securityService.LoginSecurityMiddleware()
+	protectedRoute := func(handler http.HandlerFunc) http.Handler {
+		return securityMiddleware(middleware.RequireVerifiedUser(http.HandlerFunc(handler)))
+	}
+	adminRoute := func(handler http.HandlerFunc) http.Handler {
+		return securityMiddleware(middleware.RequireAdminUser(http.HandlerFunc(handler)))
+	}
 
 	// Health check — no auth, no rate limit, always first
 	router.HandleFunc("/v0/health", healthHandler).Methods("GET")
@@ -154,57 +160,60 @@ func Start() {
 	router.Handle("/v0/login", loginSecurityMiddleware(http.HandlerFunc(middleware.LoginHandler))).Methods("POST")
 	
 	// Public Registration
+
+
+
 	router.Handle("/v0/register/initiate", loginSecurityMiddleware(http.HandlerFunc(usershandlers.InitiateRegistrationHandler))).Methods("POST")
 	router.Handle("/v0/register/verify", loginSecurityMiddleware(http.HandlerFunc(usershandlers.VerifyRegistrationHandler))).Methods("POST")
 
 	// application setup and stats information
-	router.Handle("/v0/setup", securityMiddleware(http.HandlerFunc(setuphandlers.GetSetupHandler(setup.LoadEconomicsConfig)))).Methods("GET")
-	router.Handle("/v0/setup/frontend", securityMiddleware(http.HandlerFunc(setuphandlers.GetFrontendSetupHandler(setup.LoadEconomicsConfig)))).Methods("GET")
-	router.Handle("/v0/stats", securityMiddleware(http.HandlerFunc(statshandlers.StatsHandler()))).Methods("GET")
-	router.Handle("/v0/system/metrics", securityMiddleware(http.HandlerFunc(metricshandlers.GetSystemMetricsHandler))).Methods("GET")
-	router.Handle("/v0/global/leaderboard", securityMiddleware(http.HandlerFunc(metricshandlers.GetGlobalLeaderboardHandler))).Methods("GET")
+	router.Handle("/v0/setup", protectedRoute(setuphandlers.GetSetupHandler(setup.LoadEconomicsConfig))).Methods("GET")
+	router.Handle("/v0/setup/frontend", protectedRoute(setuphandlers.GetFrontendSetupHandler(setup.LoadEconomicsConfig))).Methods("GET")
+	router.HandleFunc("/v0/stats", statshandlers.StatsHandler()).Methods("GET")
+	router.Handle("/v0/system/metrics", protectedRoute(metricshandlers.GetSystemMetricsHandler)).Methods("GET")
+	router.Handle("/v0/global/leaderboard", protectedRoute(metricshandlers.GetGlobalLeaderboardHandler)).Methods("GET")
 
 	// markets display, market information
-	router.Handle("/v0/markets", securityMiddleware(http.HandlerFunc(marketshandlers.ListMarketsHandler))).Methods("GET")
-	router.Handle("/v0/markets/search", securityMiddleware(http.HandlerFunc(marketshandlers.SearchMarketsHandler))).Methods("GET")
-	router.Handle("/v0/markets/active", securityMiddleware(http.HandlerFunc(marketshandlers.ListActiveMarketsHandler))).Methods("GET")
-	router.Handle("/v0/markets/closed", securityMiddleware(http.HandlerFunc(marketshandlers.ListClosedMarketsHandler))).Methods("GET")
-	router.Handle("/v0/markets/resolved", securityMiddleware(http.HandlerFunc(marketshandlers.ListResolvedMarketsHandler))).Methods("GET")
-	router.Handle("/v0/markets/{marketId}", securityMiddleware(http.HandlerFunc(marketshandlers.MarketDetailsHandler))).Methods("GET")
-	router.Handle("/v0/marketprojection/{marketId}/{amount}/{outcome}/", securityMiddleware(http.HandlerFunc(marketshandlers.ProjectNewProbabilityHandler))).Methods("GET")
+	router.HandleFunc("/v0/markets", marketshandlers.ListMarketsHandler).Methods("GET")
+	router.HandleFunc("/v0/markets/search", marketshandlers.SearchMarketsHandler).Methods("GET")
+	router.HandleFunc("/v0/markets/active", marketshandlers.ListActiveMarketsHandler).Methods("GET")
+	router.HandleFunc("/v0/markets/closed", marketshandlers.ListClosedMarketsHandler).Methods("GET")
+	router.HandleFunc("/v0/markets/resolved", marketshandlers.ListResolvedMarketsHandler).Methods("GET")
+	router.HandleFunc("/v0/markets/{marketId}", marketshandlers.MarketDetailsHandler).Methods("GET")
+	router.HandleFunc("/v0/marketprojection/{marketId}/{amount}/{outcome}/", marketshandlers.ProjectNewProbabilityHandler).Methods("GET")
 
 	// handle market positions, get trades
-	router.Handle("/v0/markets/bets/{marketId}", securityMiddleware(http.HandlerFunc(betshandlers.MarketBetsDisplayHandler))).Methods("GET")
-	router.Handle("/v0/markets/positions/{marketId}", securityMiddleware(http.HandlerFunc(positions.MarketDBPMPositionsHandler))).Methods("GET")
-	router.Handle("/v0/markets/positions/{marketId}/{username}", securityMiddleware(http.HandlerFunc(positions.MarketDBPMUserPositionsHandler))).Methods("GET")
-	router.Handle("/v0/markets/leaderboard/{marketId}", securityMiddleware(http.HandlerFunc(marketshandlers.MarketLeaderboardHandler))).Methods("GET")
+	router.Handle("/v0/markets/bets/{marketId}", protectedRoute(betshandlers.MarketBetsDisplayHandler)).Methods("GET")
+	router.Handle("/v0/markets/positions/{marketId}", protectedRoute(positions.MarketDBPMPositionsHandler)).Methods("GET")
+	router.Handle("/v0/markets/positions/{marketId}/{username}", protectedRoute(positions.MarketDBPMUserPositionsHandler)).Methods("GET")
+	router.Handle("/v0/markets/leaderboard/{marketId}", protectedRoute(marketshandlers.MarketLeaderboardHandler)).Methods("GET")
 
 	// handle public user stuff
-	router.Handle("/v0/userinfo/{username}", securityMiddleware(http.HandlerFunc(publicuser.GetPublicUserResponse))).Methods("GET")
-	router.Handle("/v0/usercredit/{username}", securityMiddleware(http.HandlerFunc(usercredit.GetUserCreditHandler))).Methods("GET")
-	router.Handle("/v0/portfolio/{username}", securityMiddleware(http.HandlerFunc(publicuser.GetPortfolio))).Methods("GET")
-	router.Handle("/v0/users/{username}/financial", securityMiddleware(http.HandlerFunc(usershandlers.GetUserFinancialHandler))).Methods("GET")
-	router.Handle("/v0/users/daily-login", securityMiddleware(http.HandlerFunc(usershandlers.DailyLoginStreakHandler))).Methods("POST")
+
+	// handle public user stuff
+	router.Handle("/v0/userinfo/{username}", protectedRoute(publicuser.GetPublicUserResponse)).Methods("GET")
+	router.Handle("/v0/usercredit/{username}", protectedRoute(usercredit.GetUserCreditHandler)).Methods("GET")
+	router.Handle("/v0/portfolio/{username}", protectedRoute(publicuser.GetPortfolio)).Methods("GET")
+	router.Handle("/v0/users/{username}/financial", protectedRoute(usershandlers.GetUserFinancialHandler)).Methods("GET")
+	router.Handle("/v0/users/daily-login", protectedRoute(usershandlers.DailyLoginStreakHandler)).Methods("POST")
 
 	// handle private user stuff, display sensitive profile information to customize
-	router.Handle("/v0/privateprofile", securityMiddleware(http.HandlerFunc(privateuser.GetPrivateProfileUserResponse))).Methods("GET")
+	router.Handle("/v0/privateprofile", protectedRoute(privateuser.GetPrivateProfileUserResponse)).Methods("GET")
 
 	// changing profile stuff - apply security middleware
-	router.Handle("/v0/changepassword", securityMiddleware(http.HandlerFunc(usershandlers.ChangePassword))).Methods("POST")
-	router.Handle("/v0/profilechange/displayname", securityMiddleware(http.HandlerFunc(usershandlers.ChangeDisplayName))).Methods("POST")
-	router.Handle("/v0/profilechange/emoji", securityMiddleware(http.HandlerFunc(usershandlers.ChangeEmoji))).Methods("POST")
-	router.Handle("/v0/profilechange/description", securityMiddleware(http.HandlerFunc(usershandlers.ChangeDescription))).Methods("POST")
-	router.Handle("/v0/profilechange/links", securityMiddleware(http.HandlerFunc(usershandlers.ChangePersonalLinks))).Methods("POST")
+	router.Handle("/v0/changepassword", securityMiddleware(middleware.RequireVerifiedUser(http.HandlerFunc(usershandlers.ChangePassword)))).Methods("POST")
+	router.Handle("/v0/profilechange/displayname", protectedRoute(usershandlers.ChangeDisplayName)).Methods("POST")
+	router.Handle("/v0/profilechange/update", protectedRoute(usershandlers.UpdateProfile)).Methods("POST")
 
 	// handle private user actions such as resolve a market, make a bet, create a market, change profile
-	router.Handle("/v0/resolve/{marketId}", securityMiddleware(http.HandlerFunc(marketshandlers.ResolveMarketHandler))).Methods("POST")
-	router.Handle("/v0/bet", securityMiddleware(http.HandlerFunc(buybetshandlers.PlaceBetHandler(setup.EconomicsConfig)))).Methods("POST")
-	router.Handle("/v0/userposition/{marketId}", securityMiddleware(http.HandlerFunc(usershandlers.UserMarketPositionHandler))).Methods("GET")
-	router.Handle("/v0/sell", securityMiddleware(http.HandlerFunc(sellbetshandlers.SellPositionHandler(setup.EconomicsConfig)))).Methods("POST")
-	router.Handle("/v0/create", securityMiddleware(http.HandlerFunc(marketshandlers.CreateMarketHandler(setup.EconomicsConfig)))).Methods("POST")
+	router.Handle("/v0/resolve/{marketId}", protectedRoute(marketshandlers.ResolveMarketHandler)).Methods("POST")
+	router.Handle("/v0/bet", protectedRoute(buybetshandlers.PlaceBetHandler(setup.EconomicsConfig))).Methods("POST")
+	router.Handle("/v0/userposition/{marketId}", protectedRoute(usershandlers.UserMarketPositionHandler)).Methods("GET")
+	router.Handle("/v0/sell", protectedRoute(sellbetshandlers.SellPositionHandler(setup.EconomicsConfig))).Methods("POST")
+	router.Handle("/v0/create", protectedRoute(marketshandlers.CreateMarketHandler(setup.EconomicsConfig))).Methods("POST")
 
 	// admin stuff - apply security middleware
-	router.Handle("/v0/admin/createuser", securityMiddleware(http.HandlerFunc(adminhandlers.AddUserHandler(setup.EconomicsConfig)))).Methods("POST")
+	router.Handle("/v0/admin/createuser", adminRoute(adminhandlers.AddUserHandler(setup.EconomicsConfig))).Methods("POST")
 
 	// homepage content routes
 	db := util.GetDB()
@@ -214,7 +223,7 @@ func Start() {
 	homepageHandler := cmshomehttp.NewHandler(homepageSvc)
 
 	router.HandleFunc("/v0/content/home", homepageHandler.PublicGet).Methods("GET")
-	router.Handle("/v0/admin/content/home", securityMiddleware(http.HandlerFunc(homepageHandler.AdminUpdate))).Methods("PUT")
+	router.Handle("/v0/admin/content/home", adminRoute(homepageHandler.AdminUpdate)).Methods("PUT")
 
 	// Apply body size limit (outermost layer — before CORS and routing)
 	// Apply CORS middleware if enabled

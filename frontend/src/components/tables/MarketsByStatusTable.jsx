@@ -5,6 +5,7 @@ import formatResolutionDate from '../../helpers/formatResolutionDate';
 import MobileMarketCard from './MobileMarketCard';
 import LoadingSpinner from '../loaders/LoadingSpinner';
 import ExpandableLink from '../utils/ExpandableLink';
+import { useAuth } from '../../helpers/AuthContent';
 import { getResolvedText, getResultCssClass } from '../../utils/labelMapping';
 
 const TableHeader = () => (
@@ -93,6 +94,7 @@ function MarketsByStatusTable({ status }) {
   const [marketsData, setMarketsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { token } = useAuth(); // Get auth token
 
   useEffect(() => {
     const fetchMarkets = async () => {
@@ -104,8 +106,21 @@ function MarketsByStatusTable({ status }) {
           ? `${API_URL}/v0/markets`
           : `${API_URL}/v0/markets/${status}`;
 
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error(`Failed to fetch ${status} markets`);
+        // Add Authorization header since these routes are protected
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(endpoint, { headers });
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error(`Unauthorized: Please log in to view ${status} markets`);
+          }
+          throw new Error(`Failed to fetch ${status} markets (Status: ${response.status})`);
+        }
 
         const data = await response.json();
 

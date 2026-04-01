@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"socialpredict/middleware"
 	"socialpredict/models"
@@ -64,15 +63,16 @@ func AddUserHandler(loadEconConfig setup.EconConfigLoader) func(http.ResponseWri
 			PublicUser: models.PublicUser{
 				Username:              req.Username,
 				DisplayName:           util.UniqueDisplayName(db),
-				UserType:              "REGULAR",
+				UserType:              models.RoleUser,
 				InitialAccountBalance: appConfig.Economics.User.InitialAccountBalance,
 				AccountBalance:        appConfig.Economics.User.InitialAccountBalance,
-				PersonalEmoji:         randomEmoji(),
 			},
 			PrivateUser: models.PrivateUser{
 				Email:  util.UniqueEmail(db),
 				APIKey: util.GenerateUniqueApiKey(db),
 			},
+			Role:               models.RoleUser,
+			IsVerified:         true,
 			MustChangePassword: true,
 		}
 
@@ -100,7 +100,8 @@ func AddUserHandler(loadEconConfig setup.EconConfigLoader) func(http.ResponseWri
 			"message":  "User created successfully",
 			"username": user.Username,
 			"password": password,
-			"usertype": user.UserType,
+			"role":     user.Role,
+			"usertype": user.Role,
 		}
 		json.NewEncoder(w).Encode(responseData)
 	}
@@ -119,9 +120,4 @@ func checkUniqueFields(db *gorm.DB, user *models.User) error {
 	}
 
 	return nil
-}
-
-func randomEmoji() string {
-	emojis := []string{"😀", "😃", "😄", "😁", "😆"}
-	return emojis[rand.Intn(len(emojis))]
 }

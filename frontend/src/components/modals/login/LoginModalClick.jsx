@@ -11,7 +11,7 @@ const LoginModalButton = ({ iconOnly = false }) => {
   const history = useHistory();
 
   const handleOpenModal = () => {
-    setRedirectAfterLogin(history.location.pathname);
+    setRedirectAfterLogin('/');
     setIsLoginModalOpen(true);
   };
 

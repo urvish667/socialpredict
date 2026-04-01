@@ -58,3 +58,8 @@ tmp/
 
 # Apple Silicon Docker Compose Override
 docker-compose.override.yml
+
+# Agent Files
+.agent
+
+scraped-polymarket/

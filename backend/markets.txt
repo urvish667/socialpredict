@@ -1,0 +1,224 @@
+{
+  "markets": [
+    {
+      "market": {
+        "id": 7,
+        "slug": "who-will-won-the-oscar-2026-20206",
+        "questionTitle": "Who Will Won the Oscar 2026?",
+        "description": "",
+        "outcomeType": "MULTIPLE_CHOICE",
+        "resolutionDateTime": "2026-03-30T22:30:00+05:30",
+        "finalResolutionDateTime": "0001-01-01T05:30:00+05:30",
+        "utcOffset": -330,
+        "isResolved": false,
+        "resolutionResult": "",
+        "status": "ACTIVE",
+        "initialProbability": 0.25,
+        "creatorId": 18,
+        "creatorUsername": "test10",
+        "createdAt": "2026-03-30T21:28:20.819664+05:30",
+        "yesLabel": "YES",
+        "noLabel": "NO",
+        "category": "entertainment",
+        "options": [
+          {
+            "id": 17,
+            "label": "Robert Downey Jr.",
+            "displayOrder": 0
+          },
+          {
+            "id": 18,
+            "label": "Chris Evans",
+            "displayOrder": 1
+          },
+          {
+            "id": 19,
+            "label": "Tom Hanks",
+            "displayOrder": 2
+          },
+          {
+            "id": 20,
+            "label": "Tom Holland",
+            "displayOrder": 3
+          }
+        ]
+      },
+      "creator": {
+        "username": "test10",
+        "displayname": "Minerva Schowalter",
+        "usertype": "USER",
+        "initialAccountBalance": 25000,
+        "accountBalance": 24940,
+        "referralCode": "3F21954I",
+        "hasPlacedBet": false,
+        "currentStreak": 0
+      },
+      "lastProbability": 0.5,
+      "numUsers": 0,
+      "totalVolume": 0
+    },
+    {
+      "market": {
+        "id": 6,
+        "slug": "who-will-won-the-oscar-2026-53353",
+        "questionTitle": "Who Will Won the Oscar 2026?",
+        "description": "",
+        "outcomeType": "MULTIPLE_CHOICE",
+        "resolutionDateTime": "2026-03-30T22:30:00+05:30",
+        "finalResolutionDateTime": "0001-01-01T05:30:00+05:30",
+        "utcOffset": -330,
+        "isResolved": false,
+        "resolutionResult": "",
+        "status": "ACTIVE",
+        "initialProbability": 0.25,
+        "creatorId": 18,
+        "creatorUsername": "test10",
+        "createdAt": "2026-03-30T21:28:18.982937+05:30",
+        "yesLabel": "YES",
+        "noLabel": "NO",
+        "category": "entertainment",
+        "options": [
+          {
+            "id": 13,
+            "label": "Robert Downey Jr.",
+            "displayOrder": 0
+          },
+          {
+            "id": 14,
+            "label": "Chris Evans",
+            "displayOrder": 1
+          },
+          {
+            "id": 15,
+            "label": "Tom Hanks",
+            "displayOrder": 2
+          },
+          {
+            "id": 16,
+            "label": "Tom Holland",
+            "displayOrder": 3
+          }
+        ]
+      },
+      "creator": {
+        "username": "test10",
+        "displayname": "Minerva Schowalter",
+        "usertype": "USER",
+        "initialAccountBalance": 25000,
+        "accountBalance": 24940,
+        "referralCode": "3F21954I",
+        "hasPlacedBet": false,
+        "currentStreak": 0
+      },
+      "lastProbability": 0.5,
+      "numUsers": 0,
+      "totalVolume": 0
+    },
+    {
+      "market": {
+        "id": 5,
+        "slug": "who-will-won-the-oscar-2026-78931",
+        "questionTitle": "Who Will Won the Oscar 2026?",
+        "description": "",
+        "outcomeType": "MULTIPLE_CHOICE",
+        "resolutionDateTime": "2026-03-30T22:30:00+05:30",
+        "finalResolutionDateTime": "0001-01-01T05:30:00+05:30",
+        "utcOffset": -330,
+        "isResolved": false,
+        "resolutionResult": "",
+        "status": "ACTIVE",
+        "initialProbability": 0.25,
+        "creatorId": 18,
+        "creatorUsername": "test10",
+        "createdAt": "2026-03-30T21:28:16.472555+05:30",
+        "yesLabel": "YES",
+        "noLabel": "NO",
+        "category": "entertainment",
+        "options": [
+          {
+            "id": 9,
+            "label": "Robert Downey Jr.",
+            "displayOrder": 0
+          },
+          {
+            "id": 10,
+            "label": "Chris Evans",
+            "displayOrder": 1
+          },
+          {
+            "id": 11,
+            "label": "Tom Hanks",
+            "displayOrder": 2
+          },
+          {
+            "id": 12,
+            "label": "Tom Holland",
+            "displayOrder": 3
+          }
+        ]
+      },
+      "creator": {
+        "username": "test10",
+        "displayname": "Minerva Schowalter",
+        "usertype": "USER",
+        "initialAccountBalance": 25000,
+        "accountBalance": 24940,
+        "referralCode": "3F21954I",
+        "hasPlacedBet": false,
+        "currentStreak": 0
+      },
+      "lastProbability": 0.5,
+      "numUsers": 0,
+      "totalVolume": 0
+    },
+    {
+      "market": {
+        "id": 4,
+        "slug": "will-bitcoin-hit-100k-in-2026-34893",
+        "questionTitle": "Will BitCoin Hit $100K in 2026?",
+        "description": "",
+        "outcomeType": "BINARY",
+        "resolutionDateTime": "2026-03-30T23:00:00+05:30",
+        "finalResolutionDateTime": "0001-01-01T05:30:00+05:30",
+        "utcOffset": -330,
+        "isResolved": false,
+        "resolutionResult": "",
+        "status": "ACTIVE",
+        "initialProbability": 0.5,
+        "creatorId": 18,
+        "creatorUsername": "test10",
+        "createdAt": "2026-03-30T21:22:38.9473+05:30",
+        "yesLabel": "YES",
+        "noLabel": "NO",
+        "category": "crypto",
+        "options": [
+          {
+            "id": 7,
+            "label": "YES",
+            "displayOrder": 0
+          },
+          {
+            "id": 8,
+            "label": "NO",
+            "displayOrder": 1
+          }
+        ]
+      },
+      "creator": {
+        "username": "test10",
+        "displayname": "Minerva Schowalter",
+        "usertype": "USER",
+        "initialAccountBalance": 25000,
+        "accountBalance": 24940,
+        "referralCode": "3F21954I",
+        "hasPlacedBet": false,
+        "currentStreak": 0
+      },
+      "lastProbability": 0.5,
+      "numUsers": 0,
+      "totalVolume": 0
+    }
+  ],
+  "status": "active",
+  "count": 4
+}

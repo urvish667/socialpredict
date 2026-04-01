@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 // Base styles for all tabs
-const tabBaseStyle = "px-4 py-2 text-sm font-medium text-center cursor-pointer";
+const tabBaseStyle = "px-4 py-3 text-[10px] sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer transition-all border-b-2";
 // Styles for the non-selected tabs
-const tabInactiveStyle = "text-white bg-custom-gray-light border-transparent";
+const tabInactiveStyle = "text-white/40 border-transparent hover:text-white/80 hover:bg-white/[0.02]";
 // Styles for the selected tab
-const tabActiveStyle = "text-white bg-primary-pink";
+const tabActiveStyle = "text-[#ddff5c] border-[#ddff5c] bg-[#ddff5c]/5";
 
 const SiteTabs = ({ tabs, onTabChange, defaultTab, activeTab }) => {
     const [internalActiveTab, setInternalActiveTab] = useState(defaultTab || tabs[0].label);
@@ -38,7 +38,7 @@ const SiteTabs = ({ tabs, onTabChange, defaultTab, activeTab }) => {
     return (
         <div>
             {/* Mobile-responsive tab container with overflow handling */}
-            <div className="flex border-b-2 overflow-x-auto">
+            <div className="flex border-b border-white/10 overflow-x-auto custom-scrollbar">
                 {tabs.map(tab => (
                     <div
                         key={tab.label}
@@ -46,13 +46,13 @@ const SiteTabs = ({ tabs, onTabChange, defaultTab, activeTab }) => {
                         onClick={() => handleTabClick(tab.label)}
                     >
                         {/* Mobile-responsive text with truncation */}
-                        <span className="truncate text-xs sm:text-sm block">
+                        <span className="truncate block">
                             {tab.label}
                         </span>
                     </div>
                 ))}
             </div>
-            <div className="p-4">
+            <div className="pt-6">
                 {tabs.map(tab => (
                     currentTab === tab.label && <div key={tab.label}>{tab.content}</div>
                 ))}

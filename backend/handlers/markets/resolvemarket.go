@@ -17,14 +17,28 @@ import (
 	"gorm.io/gorm"
 )
 
+// isValidResolutionOutcome checks if the outcome is valid for the given market.
+func isValidResolutionOutcome(db *gorm.DB, market *models.Market, outcome string) bool {
+	if outcome == "N/A" {
+		return true // N/A is always valid (void market)
+	}
+
+	if market.OutcomeType == models.OutcomeTypeMultipleChoice {
+		var count int64
+		db.Model(&models.MarketOption{}).Where("market_id = ? AND label = ?", market.ID, outcome).Count(&count)
+		return count > 0
+	}
+
+	// Binary: YES or NO
+	return outcome == "YES" || outcome == "NO"
+}
+
 func ResolveMarketHandler(w http.ResponseWriter, r *http.Request) {
 
 	logging.LogMsg("Attempting to use ResolveMarketHandler.")
 
-	// Use database connection
 	db := util.GetDB()
 
-	// Retrieve marketId from URL parameters
 	vars := mux.Vars(r)
 	marketIdStr := vars["marketId"]
 
@@ -34,14 +48,12 @@ func ResolveMarketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate token and get user
 	user, httperr := middleware.ValidateTokenAndGetUser(r, db)
 	if httperr != nil {
 		http.Error(w, "Invalid token: "+httperr.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	// Parse request body for resolution outcome
 	var resolutionData struct {
 		Outcome string `json:"outcome"`
 	}
@@ -61,49 +73,86 @@ func ResolveMarketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if &market == nil {
-		// handle nil market if necessary, this is just precautionary, as gorm.First should return found object or error
-		http.Error(w, "No market found with provided ID", http.StatusNotFound)
-		return
-	}
-
-	// Check if the logged-in user is the creator of the market
-	if market.CreatorUsername != user.Username {
-		http.Error(w, "User is not the creator of the market", http.StatusUnauthorized)
-		return
-	}
-
-	// Check if the market is already resolved
-	if market.IsResolved {
-		http.Error(w, "Market is already resolved", http.StatusBadRequest)
-		return
-	}
-
-	// Validate the resolution outcome
-	if resolutionData.Outcome != "YES" && resolutionData.Outcome != "NO" && resolutionData.Outcome != "N/A" {
+	// Validate the resolution outcome when provided.
+	if resolutionData.Outcome != "" && !isValidResolutionOutcome(db, &market, resolutionData.Outcome) {
 		http.Error(w, "Invalid resolution outcome", http.StatusBadRequest)
 		return
 	}
 
-	// Update the market with the resolution result
-	market.IsResolved = true
+	if market.Status == "" {
+		if market.IsResolved {
+			market.Status = models.MarketStatusFinalized
+		} else {
+			market.Status = models.MarketStatusActive
+		}
+	}
+
+	if middleware.IsAdmin(user) {
+		if !middleware.CanResolveMarket(user) {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+		if market.Status != models.MarketStatusPendingResolution {
+			http.Error(w, "Market must be pending resolution before admin finalization", http.StatusBadRequest)
+			return
+		}
+		if market.ResolutionResult == "" {
+			http.Error(w, "Suggested outcome is required before finalization", http.StatusBadRequest)
+			return
+		}
+		if resolutionData.Outcome != "" && resolutionData.Outcome != market.ResolutionResult {
+			http.Error(w, "Admin finalization must use the suggested outcome", http.StatusBadRequest)
+			return
+		}
+
+		adminID := user.ID
+		market.Status = models.MarketStatusFinalized
+		market.IsResolved = true
+		market.ResolvedBy = &adminID
+		market.FinalResolutionDateTime = time.Now()
+
+		if err := db.Save(&market).Error; err != nil {
+			http.Error(w, "Error saving market resolution: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = payout.DistributePayoutsWithRefund(&market, db)
+		if err != nil {
+			http.Error(w, "Error distributing payouts: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Market finalized successfully"})
+		return
+	}
+
+	if !middleware.CanSuggestMarketResolution(user, &market) {
+		http.Error(w, "Only the market creator can suggest a resolution", http.StatusForbidden)
+		return
+	}
+
+	if market.Status != models.MarketStatusActive {
+		http.Error(w, "Market is not active", http.StatusBadRequest)
+		return
+	}
+
+	if resolutionData.Outcome == "" {
+		http.Error(w, "Resolution outcome is required", http.StatusBadRequest)
+		return
+	}
+
+	market.Status = models.MarketStatusPendingResolution
+	market.IsResolved = false
 	market.ResolutionResult = resolutionData.Outcome
-	market.FinalResolutionDateTime = time.Now()
+	market.ResolvedBy = nil
+	market.FinalResolutionDateTime = time.Time{}
 
-	// Save the market changes first so payout calculation sees the resolved state
 	if err := db.Save(&market).Error; err != nil {
-		http.Error(w, "Error saving market resolution: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error saving market resolution suggestion: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Handle payouts (if applicable) - after market is saved as resolved
-	err = payout.DistributePayoutsWithRefund(&market, db)
-	if err != nil {
-		http.Error(w, "Error distributing payouts: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Send a response back
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Market resolved successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Resolution submitted for admin review"})
 }

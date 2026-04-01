@@ -44,16 +44,16 @@ func SeedUsers(db *gorm.DB) {
 				PublicUser: models.PublicUser{
 					Username:              "admin",
 					DisplayName:           "Administrator",
-					UserType:              "ADMIN",
+					UserType:              models.RoleAdmin,
 					InitialAccountBalance: config.Economics.User.InitialAccountBalance,
 					AccountBalance:        config.Economics.User.InitialAccountBalance,
-					PersonalEmoji:         "NONE",
-					Description:           "Administrator",
 				},
 				PrivateUser: models.PrivateUser{
 					Email:  "admin@example.com",
 					APIKey: "NONE",
 				},
+				Role:               models.RoleAdmin,
+				IsVerified:         true,
 				MustChangePassword: true,
 			}
 

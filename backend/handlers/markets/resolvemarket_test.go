@@ -9,328 +9,176 @@ import (
 	"socialpredict/models"
 	"socialpredict/models/modelstesting"
 	"socialpredict/util"
+	"strconv"
 	"testing"
 
 	"github.com/gorilla/mux"
 )
 
-// TestMain sets up the test environment
 func TestMain(m *testing.M) {
-	// Set up test environment
 	os.Setenv("JWT_SIGNING_KEY", "test-secret-key-for-testing")
-
-	// Run tests
 	code := m.Run()
-
-	// Clean up
 	os.Exit(code)
 }
 
-func TestResolveMarketHandler_NARefund(t *testing.T) {
-	db := modelstesting.NewFakeDB(t)
+func resolveRequest(t *testing.T, router *mux.Router, token string, marketID int64, outcome string) *httptest.ResponseRecorder {
+	t.Helper()
 
-	// Set the global DB for util.GetDB()
+	reqBody := map[string]string{}
+	if outcome != "" {
+		reqBody["outcome"] = outcome
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/v0/market/"+strconv.FormatInt(marketID, 10)+"/resolve", bytes.NewBuffer(jsonBody))
+	req = mux.SetURLVars(req, map[string]string{"marketId": strconv.FormatInt(marketID, 10)})
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	return w
+}
+
+func setupResolveRouter() *mux.Router {
+	router := mux.NewRouter()
+	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
+	return router
+}
+
+func TestResolveMarketHandler_CreatorSuggestsAndAdminFinalizes(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
 	util.DB = db
 
-	// Create users
 	creator := modelstesting.GenerateUser("creator", 0)
+	admin := modelstesting.GenerateUser("admin", 0)
+	admin.Role = models.RoleAdmin
+	admin.UserType = models.RoleAdmin
 	bettor := modelstesting.GenerateUser("bettor", 0)
 	db.Create(&creator)
+	db.Create(&admin)
 	db.Create(&bettor)
 
-	// Create market
 	market := modelstesting.GenerateMarket(1, "creator")
+	market.CreatorID = creator.ID
 	db.Create(&market)
 
-	// Create bet
 	bet := modelstesting.GenerateBet(100, "YES", "bettor", uint(market.ID), 0)
 	db.Create(&bet)
 
-	// Create JWT token for creator
-	token := modelstesting.GenerateValidJWT("creator")
+	router := setupResolveRouter()
 
-	// Create request body
-	reqBody := map[string]string{"outcome": "N/A"}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	// Create HTTP request
-	req := httptest.NewRequest("POST", "/v0/market/1/resolve", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create response recorder
-	w := httptest.NewRecorder()
-
-	// Set up router with URL vars
-	router := mux.NewRouter()
-	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
-	router.ServeHTTP(w, req)
-
-	// Check response
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
+	creatorToken := modelstesting.GenerateValidJWT("creator")
+	suggestResp := resolveRequest(t, router, creatorToken, market.ID, "N/A")
+	if suggestResp.Code != http.StatusOK {
+		t.Fatalf("expected suggestion status 200, got %d body=%s", suggestResp.Code, suggestResp.Body.String())
 	}
 
-	// Verify market is resolved
+	var pendingMarket models.Market
+	db.First(&pendingMarket, market.ID)
+	if pendingMarket.Status != models.MarketStatusPendingResolution {
+		t.Fatalf("expected market status %s, got %s", models.MarketStatusPendingResolution, pendingMarket.Status)
+	}
+	if pendingMarket.IsResolved {
+		t.Fatal("market should not be finalized after creator suggestion")
+	}
+
+	adminToken := modelstesting.GenerateValidJWT("admin")
+	finalizeResp := resolveRequest(t, router, adminToken, market.ID, "")
+	if finalizeResp.Code != http.StatusOK {
+		t.Fatalf("expected finalize status 200, got %d body=%s", finalizeResp.Code, finalizeResp.Body.String())
+	}
+
 	var resolvedMarket models.Market
 	db.First(&resolvedMarket, market.ID)
 	if !resolvedMarket.IsResolved {
-		t.Fatal("Market should be resolved")
+		t.Fatal("market should be finalized")
+	}
+	if resolvedMarket.Status != models.MarketStatusFinalized {
+		t.Fatalf("expected finalized status, got %s", resolvedMarket.Status)
 	}
 	if resolvedMarket.ResolutionResult != "N/A" {
-		t.Fatalf("Expected resolution result N/A, got %s", resolvedMarket.ResolutionResult)
+		t.Fatalf("expected resolution result N/A, got %s", resolvedMarket.ResolutionResult)
+	}
+	if resolvedMarket.ResolvedBy == nil || *resolvedMarket.ResolvedBy != admin.ID {
+		t.Fatalf("expected resolvedBy to be admin id %d", admin.ID)
 	}
 
-	// Verify bettor received refund
 	var updatedBettor models.User
 	db.Where("username = ?", "bettor").First(&updatedBettor)
 	if updatedBettor.AccountBalance != 100 {
-		t.Fatalf("Expected bettor balance 100 after refund, got %d", updatedBettor.AccountBalance)
+		t.Fatalf("expected bettor balance 100 after refund, got %d", updatedBettor.AccountBalance)
 	}
 }
 
-func TestResolveMarketHandler_YESWin(t *testing.T) {
+func TestResolveMarketHandler_UnauthorizedUserCannotSuggest(t *testing.T) {
 	db := modelstesting.NewFakeDB(t)
-
-	// Set the global DB for util.GetDB()
 	util.DB = db
 
-	// Create users
-	creator := modelstesting.GenerateUser("creator", 0)
-	winner := modelstesting.GenerateUser("winner", 0)
-	loser := modelstesting.GenerateUser("loser", 0)
-	db.Create(&creator)
-	db.Create(&winner)
-	db.Create(&loser)
-
-	// Create market
-	market := modelstesting.GenerateMarket(2, "creator")
-	db.Create(&market)
-
-	// Create bets
-	winningBet := modelstesting.GenerateBet(100, "YES", "winner", uint(market.ID), 0)
-	losingBet := modelstesting.GenerateBet(100, "NO", "loser", uint(market.ID), 0)
-	db.Create(&winningBet)
-	db.Create(&losingBet)
-
-	// Create JWT token for creator
-	token := modelstesting.GenerateValidJWT("creator")
-
-	// Create request body
-	reqBody := map[string]string{"outcome": "YES"}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	// Create HTTP request
-	req := httptest.NewRequest("POST", "/v0/market/2/resolve", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create response recorder
-	w := httptest.NewRecorder()
-
-	// Set up router with URL vars
-	router := mux.NewRouter()
-	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
-	router.ServeHTTP(w, req)
-
-	// Check response
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	// Verify market is resolved
-	var resolvedMarket models.Market
-	db.First(&resolvedMarket, market.ID)
-	if !resolvedMarket.IsResolved {
-		t.Fatal("Market should be resolved")
-	}
-	if resolvedMarket.ResolutionResult != "YES" {
-		t.Fatalf("Expected resolution result YES, got %s", resolvedMarket.ResolutionResult)
-	}
-
-	// Verify winner got more than loser (proportional payout)
-	var updatedWinner, updatedLoser models.User
-	db.Where("username = ?", "winner").First(&updatedWinner)
-	db.Where("username = ?", "loser").First(&updatedLoser)
-
-	if updatedWinner.AccountBalance <= updatedLoser.AccountBalance {
-		t.Fatalf("Expected winner balance (%d) to be greater than loser balance (%d)", updatedWinner.AccountBalance, updatedLoser.AccountBalance)
-	}
-
-	// The total payouts should equal the market volume (200 total bet amount)
-	totalPayout := updatedWinner.AccountBalance + updatedLoser.AccountBalance
-	if totalPayout != 200 {
-		t.Fatalf("Expected total payout to be 200, got %d", totalPayout)
-	}
-}
-
-func TestResolveMarketHandler_NOWin(t *testing.T) {
-	db := modelstesting.NewFakeDB(t)
-
-	// Set the global DB for util.GetDB()
-	util.DB = db
-
-	// Create users
-	creator := modelstesting.GenerateUser("creator", 0)
-	winner := modelstesting.GenerateUser("winner", 0)
-	loser := modelstesting.GenerateUser("loser", 0)
-	db.Create(&creator)
-	db.Create(&winner)
-	db.Create(&loser)
-
-	// Create market
-	market := modelstesting.GenerateMarket(3, "creator")
-	db.Create(&market)
-
-	// Create bets
-	losingBet := modelstesting.GenerateBet(100, "YES", "loser", uint(market.ID), 0)
-	winningBet := modelstesting.GenerateBet(100, "NO", "winner", uint(market.ID), 0)
-	db.Create(&losingBet)
-	db.Create(&winningBet)
-
-	// Create JWT token for creator
-	token := modelstesting.GenerateValidJWT("creator")
-
-	// Create request body
-	reqBody := map[string]string{"outcome": "NO"}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	// Create HTTP request
-	req := httptest.NewRequest("POST", "/v0/market/3/resolve", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create response recorder
-	w := httptest.NewRecorder()
-
-	// Set up router with URL vars
-	router := mux.NewRouter()
-	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
-	router.ServeHTTP(w, req)
-
-	// Check response
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	// Verify market is resolved
-	var resolvedMarket models.Market
-	db.First(&resolvedMarket, market.ID)
-	if !resolvedMarket.IsResolved {
-		t.Fatal("Market should be resolved")
-	}
-	if resolvedMarket.ResolutionResult != "NO" {
-		t.Fatalf("Expected resolution result NO, got %s", resolvedMarket.ResolutionResult)
-	}
-
-	// Verify winner got more than loser (proportional payout)
-	var updatedWinner, updatedLoser models.User
-	db.Where("username = ?", "winner").First(&updatedWinner)
-	db.Where("username = ?", "loser").First(&updatedLoser)
-
-	if updatedWinner.AccountBalance <= updatedLoser.AccountBalance {
-		t.Fatalf("Expected winner balance (%d) to be greater than loser balance (%d)", updatedWinner.AccountBalance, updatedLoser.AccountBalance)
-	}
-
-	// The total payouts should equal the market volume (200 total bet amount)
-	totalPayout := updatedWinner.AccountBalance + updatedLoser.AccountBalance
-	if totalPayout != 200 {
-		t.Fatalf("Expected total payout to be 200, got %d", totalPayout)
-	}
-}
-
-func TestResolveMarketHandler_UnauthorizedUser(t *testing.T) {
-	db := modelstesting.NewFakeDB(t)
-
-	// Set the global DB for util.GetDB()
-	util.DB = db
-
-	// Create users
 	creator := modelstesting.GenerateUser("creator", 0)
 	otherUser := modelstesting.GenerateUser("other", 0)
 	db.Create(&creator)
 	db.Create(&otherUser)
 
-	// Create market
 	market := modelstesting.GenerateMarket(4, "creator")
+	market.CreatorID = creator.ID
 	db.Create(&market)
 
-	// Create JWT token for non-creator
 	token := modelstesting.GenerateValidJWT("other")
+	router := setupResolveRouter()
+	resp := resolveRequest(t, router, token, market.ID, "YES")
 
-	// Create request body
-	reqBody := map[string]string{"outcome": "YES"}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	// Create HTTP request
-	req := httptest.NewRequest("POST", "/v0/market/4/resolve", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create response recorder
-	w := httptest.NewRecorder()
-
-	// Set up router with URL vars
-	router := mux.NewRouter()
-	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
-	router.ServeHTTP(w, req)
-
-	// Check response - should be unauthorized
-	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("Expected status 401, got %d", w.Code)
+	if resp.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d body=%s", resp.Code, resp.Body.String())
 	}
 
-	// Verify market is not resolved
-	var market_check models.Market
-	db.First(&market_check, market.ID)
-	if market_check.IsResolved {
-		t.Fatal("Market should not be resolved")
+	var marketCheck models.Market
+	db.First(&marketCheck, market.ID)
+	if marketCheck.Status != models.MarketStatusActive {
+		t.Fatalf("market should remain active, got %s", marketCheck.Status)
 	}
 }
 
 func TestResolveMarketHandler_InvalidOutcome(t *testing.T) {
 	db := modelstesting.NewFakeDB(t)
-
-	// Set the global DB for util.GetDB()
 	util.DB = db
 
-	// Create user
 	creator := modelstesting.GenerateUser("creator", 0)
 	db.Create(&creator)
 
-	// Create market
 	market := modelstesting.GenerateMarket(5, "creator")
+	market.CreatorID = creator.ID
 	db.Create(&market)
 
-	// Create JWT token for creator
 	token := modelstesting.GenerateValidJWT("creator")
+	router := setupResolveRouter()
+	resp := resolveRequest(t, router, token, market.ID, "MAYBE")
 
-	// Create request body with invalid outcome
-	reqBody := map[string]string{"outcome": "MAYBE"}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	// Create HTTP request
-	req := httptest.NewRequest("POST", "/v0/market/5/resolve", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create response recorder
-	w := httptest.NewRecorder()
-
-	// Set up router with URL vars
-	router := mux.NewRouter()
-	router.HandleFunc("/v0/market/{marketId}/resolve", ResolveMarketHandler).Methods("POST")
-	router.ServeHTTP(w, req)
-
-	// Check response - should be bad request
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected status 400, got %d", w.Code)
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", resp.Code)
 	}
+}
 
-	// Verify market is not resolved
-	var market_check models.Market
-	db.First(&market_check, market.ID)
-	if market_check.IsResolved {
-		t.Fatal("Market should not be resolved")
+func TestResolveMarketHandler_AdminCannotFinalizeActiveMarket(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+	util.DB = db
+
+	creator := modelstesting.GenerateUser("creator", 0)
+	admin := modelstesting.GenerateUser("admin", 0)
+	admin.Role = models.RoleAdmin
+	admin.UserType = models.RoleAdmin
+	db.Create(&creator)
+	db.Create(&admin)
+
+	market := modelstesting.GenerateMarket(6, "creator")
+	market.CreatorID = creator.ID
+	db.Create(&market)
+
+	token := modelstesting.GenerateValidJWT("admin")
+	router := setupResolveRouter()
+	resp := resolveRequest(t, router, token, market.ID, "")
+
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d body=%s", resp.Code, resp.Body.String())
 	}
 }

@@ -26,13 +26,13 @@ const LandingTicker = () => {
     if (loading || markets.length === 0) return null;
 
     return (
-        <div className="w-full bg-surface-container-high/30 backdrop-blur-sm border-y border-outline-variant/10 py-3 overflow-hidden flex items-center group">
+        <div className="w-full bg-[#0b0f0e] border-y border-white/5 py-3 overflow-hidden flex items-center group rounded-none sticky top-16 z-40">
             <div className="flex animate-marquee whitespace-nowrap gap-12 group-hover:pause">
                 {/* Duplicate for seamless loop */}
                 {[...markets, ...markets].map((m, idx) => (
                     <div key={`${m.market.id}-${idx}`} className="flex items-center gap-4 px-4">
                         <span className="text-secondary-fixed font-black text-sm tracking-tighter uppercase font-logo">
-                            {m.market.title.length > 40 ? m.market.title.substring(0, 40) + '...' : m.market.title}
+                            {m.market.questionTitle && m.market.questionTitle.length > 40 ? m.market.questionTitle.substring(0, 40) + '...' : m.market.questionTitle}
                         </span>
                         <div className={`flex items-center gap-1 font-bold ${m.lastProbability > 0.5 ? 'text-primary' : 'text-error'}`}>
                             <span className="material-symbols-outlined text-xs">

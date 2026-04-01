@@ -29,21 +29,29 @@ const PositionsActivityLayout = ({ marketId, market, refreshTrigger }) => {
   const labels = market ? getMarketLabels(market) : { yes: "YES", no: "NO" };
 
   return (
-    <div className="flex flex-row gap-4 p-4">
+    <div className="flex flex-col sm:flex-row gap-6 p-4">
       {/* NO Shares */}
       <div className="flex-1">
-        <h2 className="text-center font-bold mb-2">Shares for: <span className="text-red-500">{labels.no}</span></h2>
+        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-3 border-b border-white/10 pb-2">
+          Shares for: <span className="text-[#f87171] ml-1">{labels.no}</span>
+        </h2>
         <div className="flex flex-col gap-2">
           {positions.filter(pos => pos.noSharesOwned > 0).map((pos, index) => (
-            <div key={index} className="bg-gray-800 p-3 rounded-lg shadow flex flex-col">
+            <div key={index} className="bg-white/[0.02] border border-white/10 p-3 hover:border-white/30 transition-all flex flex-col gap-2">
               <Link
                 to={`/user/${pos.username}`}
-                className="text-blue-400 font-bold underline hover:text-blue-600"
+                className="text-[#ddff5c] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-colors"
               >
-                {pos.username}
+                @{pos.username}
               </Link>
-              <div className="text-sm text-gray-300">Shares: {pos.noSharesOwned}</div>
-              <div className="text-sm text-green-400">Value: {pos.value}</div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <span className="text-white/40">Shares</span>
+                <span className="text-white">{Math.floor(pos.noSharesOwned).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <span className="text-white/40">Value</span>
+                <span className="text-[#f87171]">🪙 {parseFloat(pos.value).toFixed(2)}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -51,18 +59,26 @@ const PositionsActivityLayout = ({ marketId, market, refreshTrigger }) => {
 
       {/* YES Shares */}
       <div className="flex-1">
-        <h2 className="text-center font-bold mb-2">Shares for: <span className="text-green-500">{labels.yes}</span></h2>
+        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-3 border-b border-white/10 pb-2">
+          Shares for: <span className="text-[#34d399] ml-1">{labels.yes}</span>
+        </h2>
         <div className="flex flex-col gap-2">
           {positions.filter(pos => pos.yesSharesOwned > 0).map((pos, index) => (
-            <div key={index} className="bg-gray-800 p-3 rounded-lg shadow flex flex-col">
+            <div key={index} className="bg-white/[0.02] border border-white/10 p-3 hover:border-white/30 transition-all flex flex-col gap-2">
               <Link
                 to={`/user/${pos.username}`}
-                className="text-blue-400 font-bold underline hover:text-blue-600"
+                className="text-[#ddff5c] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-colors"
               >
-                {pos.username}
+                @{pos.username}
               </Link>
-              <div className="text-sm text-gray-300">Shares: {pos.yesSharesOwned}</div>
-              <div className="text-sm text-green-400">Value: {pos.value}</div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <span className="text-white/40">Shares</span>
+                <span className="text-white">{Math.floor(pos.yesSharesOwned).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <span className="text-white/40">Value</span>
+                <span className="text-[#34d399]">🪙 {parseFloat(pos.value).toFixed(2)}</span>
+              </div>
             </div>
           ))}
         </div>

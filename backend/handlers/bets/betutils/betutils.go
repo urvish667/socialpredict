@@ -23,6 +23,10 @@ func CheckMarketStatus(db *gorm.DB, marketID uint) error {
 		return errors.New("cannot place a bet on a resolved market")
 	}
 
+	if market.Status == models.MarketStatusPendingResolution || market.Status == models.MarketStatusFinalized {
+		return errors.New("cannot place a bet on a market awaiting or after resolution")
+	}
+
 	if time.Now().After(market.ResolutionDateTime) {
 		return errors.New("cannot place a bet on a closed market")
 	}

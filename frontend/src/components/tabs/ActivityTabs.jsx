@@ -9,7 +9,7 @@ const ActivityTabs = ({ marketId, market, refreshTrigger }) => {
         { label: 'Positions', content: <PositionsActivityLayout marketId={marketId} market={market} refreshTrigger={refreshTrigger} /> },
         { label: 'Bets', content: <BetsActivityLayout marketId={marketId} refreshTrigger={refreshTrigger} /> },
         { label: 'Leaderboard', content: <LeaderboardActivity marketId={marketId} market={market} /> },
-        { label: 'Comments', content: <div>Comments Go here...</div> },
+        { label: 'Comments', content: <div className="p-8 text-center text-white/40 text-[10px] uppercase tracking-[0.2em] font-black border border-white/5 bg-white/[0.01]">Comments coming soon...</div> },
     ];
 
     return <SiteTabs tabs={tabsData} />;

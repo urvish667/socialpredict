@@ -6,23 +6,25 @@ const useUserData = (username, usePrivateProfile = false) => {
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { token } = useAuth();
+
+  const refetch = () => setRefreshTrigger(prev => prev + 1);
 
   useEffect(() => {
     const fetchUserData = async () => {
+      setUserLoading(true);
       try {
         let url, headers = {};
         
         if (usePrivateProfile) {
-          // Use private profile endpoint for authenticated user's own profile
-          url = `${API_URL}/api/v0/privateprofile`;
+          url = `${API_URL}/v0/privateprofile`;
           headers = {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           };
         } else {
-          // Use public user endpoint for viewing other users' profiles
-          url = `${API_URL}/api/v0/userinfo/${username}`;
+          url = `${API_URL}/v0/userinfo/${username}`;
           if (token) {
             headers = {
               'Authorization': `Bearer ${token}`,
@@ -48,9 +50,9 @@ const useUserData = (username, usePrivateProfile = false) => {
     if (username || usePrivateProfile) {
       fetchUserData();
     }
-  }, [username, usePrivateProfile, token]);
+  }, [username, usePrivateProfile, token, refreshTrigger]);
 
-  return { userData, userLoading, userError };
+  return { userData, userLoading, userError, refetch };
 };
 
 export default useUserData;

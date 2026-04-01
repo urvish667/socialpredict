@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"socialpredict/models"
 	"socialpredict/util"
@@ -9,6 +10,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 )
+
+type contextKey string
+
+const authenticatedUserKey contextKey = "authenticated-user"
 
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -21,10 +26,55 @@ func Authenticate(next http.Handler) http.Handler {
 	})
 }
 
+func RequireVerifiedUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		db := util.GetDB()
+		user, httpErr := ValidateVerifiedTokenAndGetUser(r, db)
+		if httpErr != nil {
+			http.Error(w, httpErr.Message, httpErr.StatusCode)
+			return
+		}
+
+		if !isPasswordChangeAllowedPath(r.URL.Path) {
+			if httpErr := CheckMustChangePasswordFlag(user); httpErr != nil {
+				http.Error(w, httpErr.Message, httpErr.StatusCode)
+				return
+			}
+		}
+
+		ctx := context.WithValue(r.Context(), authenticatedUserKey, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func RequireAdminUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		db := util.GetDB()
+		user, httpErr := ValidateVerifiedTokenAndGetUser(r, db)
+		if httpErr != nil {
+			http.Error(w, httpErr.Message, httpErr.StatusCode)
+			return
+		}
+
+		if httpErr := CheckMustChangePasswordFlag(user); httpErr != nil {
+			http.Error(w, httpErr.Message, httpErr.StatusCode)
+			return
+		}
+
+		if !IsAdmin(user) {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), authenticatedUserKey, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 // ValidateUserAndEnforcePasswordChange performs user validation and checks if a password change is required.
 // It returns the user and any errors encountered.
 func ValidateUserAndEnforcePasswordChangeGetUser(r *http.Request, db *gorm.DB) (*models.User, *HTTPError) {
-	user, httpErr := ValidateTokenAndGetUser(r, db)
+	user, httpErr := ValidateVerifiedTokenAndGetUser(r, db)
 	if httpErr != nil {
 		return nil, httpErr
 	}
@@ -32,6 +82,19 @@ func ValidateUserAndEnforcePasswordChangeGetUser(r *http.Request, db *gorm.DB) (
 	// Check if a password change is required
 	if httpErr := CheckMustChangePasswordFlag(user); httpErr != nil {
 		return nil, httpErr
+	}
+
+	return user, nil
+}
+
+func ValidateVerifiedTokenAndGetUser(r *http.Request, db *gorm.DB) (*models.User, *HTTPError) {
+	user, httpErr := ValidateTokenAndGetUser(r, db)
+	if httpErr != nil {
+		return nil, httpErr
+	}
+
+	if !user.IsVerified {
+		return nil, &HTTPError{StatusCode: http.StatusForbidden, Message: "Account verification required"}
 	}
 
 	return user, nil
@@ -72,4 +135,13 @@ func CheckMustChangePasswordFlag(user *models.User) *HTTPError {
 		}
 	}
 	return nil
+}
+
+func AuthenticatedUserFromContext(r *http.Request) *models.User {
+	user, _ := r.Context().Value(authenticatedUserKey).(*models.User)
+	return user
+}
+
+func isPasswordChangeAllowedPath(path string) bool {
+	return path == "/v0/changepassword" || path == "/v0/logout"
 }

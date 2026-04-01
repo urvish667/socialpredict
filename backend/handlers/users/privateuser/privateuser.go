@@ -15,15 +15,21 @@ type CombinedUserResponse struct {
 	// Public fields
 	Username              string `json:"username"`
 	DisplayName           string `json:"displayname"`
+	FullName              string `json:"fullName"`
+	DateOfBirth           string `json:"dateOfBirth"`
+	Gender                string `json:"gender"`
+	StreetAddress         string `json:"streetAddress"`
+	Country               string `json:"country"`
+	State                 string `json:"state"`
+	City                  string `json:"city"`
+	PostalCode            string `json:"postalCode"`
+	Role                  string `json:"role"`
 	UserType              string `json:"usertype"`
+	IsVerified            bool   `json:"isVerified"`
 	InitialAccountBalance int64  `json:"initialAccountBalance"`
 	AccountBalance        int64  `json:"accountBalance"`
-	PersonalEmoji         string `json:"personalEmoji,omitempty"`
-	Description           string `json:"description,omitempty"`
-	PersonalLink1         string `json:"personalink1,omitempty"`
-	PersonalLink2         string `json:"personalink2,omitempty"`
-	PersonalLink3         string `json:"personalink3,omitempty"`
-	PersonalLink4         string `json:"personalink4,omitempty"`
+	ReferralCode          string `json:"referralCode"`
+	CurrentStreak         int    `json:"currentStreak"`
 }
 
 func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +46,15 @@ func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
 	// The username is extracted from the token
 	username := user.Username
 
+	// Just-in-time generation of referral code for existing users who don't have one
+	if user.ReferralCode == "" {
+		code, err := models.GenerateUniqueReferralCode(db)
+		if err == nil {
+			user.ReferralCode = code
+			db.Save(&user)
+		}
+	}
+
 	publicInfo := publicuser.GetPublicUserInfo(db, username)
 
 	response := CombinedUserResponse{
@@ -48,15 +63,21 @@ func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
 		// Public fields
 		Username:              publicInfo.Username,
 		DisplayName:           publicInfo.DisplayName,
-		UserType:              publicInfo.UserType,
+		FullName:              publicInfo.FullName,
+		DateOfBirth:           publicInfo.DateOfBirth,
+		Gender:                publicInfo.Gender,
+		StreetAddress:         publicInfo.StreetAddress,
+		Country:               publicInfo.Country,
+		State:                 publicInfo.State,
+		City:                  publicInfo.City,
+		PostalCode:            publicInfo.PostalCode,
+		Role:                  user.Role,
+		UserType:              user.Role,
+		IsVerified:            user.IsVerified,
 		InitialAccountBalance: publicInfo.InitialAccountBalance,
 		AccountBalance:        publicInfo.AccountBalance,
-		PersonalEmoji:         publicInfo.PersonalEmoji,
-		Description:           publicInfo.Description,
-		PersonalLink1:         publicInfo.PersonalLink1,
-		PersonalLink2:         publicInfo.PersonalLink2,
-		PersonalLink3:         publicInfo.PersonalLink3,
-		PersonalLink4:         publicInfo.PersonalLink4,
+		ReferralCode:          publicInfo.ReferralCode,
+		CurrentStreak:         publicInfo.CurrentStreak,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

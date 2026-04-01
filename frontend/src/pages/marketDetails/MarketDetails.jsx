@@ -6,7 +6,7 @@ import LoadingSpinner from '../../components/loaders/LoadingSpinner';
 
 const MarketDetails = () => {
   const { username } = useAuth();
-  const { details, isLoggedIn, token, refetchData, currentProbability } =
+  const { details, isLoggedIn, token, refetchData, currentProbability, optionProbabilities } =
     useMarketDetails();
 
   if (!details) {
@@ -24,6 +24,7 @@ const MarketDetails = () => {
           marketDust={details.marketDust || 0}
           currentProbability={currentProbability}
           probabilityChanges={details.probabilityChanges}
+          optionProbabilities={optionProbabilities}
           marketId={details.market.id}
           username={username}
           isLoggedIn={isLoggedIn}

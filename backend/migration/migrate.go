@@ -90,6 +90,7 @@ func MigrateDB(db *gorm.DB) error {
 		if err := db.AutoMigrate(
 			&models.User{},
 			&models.Market{},
+			&models.MarketOption{},
 			&models.Bet{},
 			&models.HomepageContent{},
 		); err != nil {
@@ -106,6 +107,12 @@ func MigrateDB(db *gorm.DB) error {
 	// Always ensure core models are in sync even if migrations ran
 	if err := db.AutoMigrate(&models.User{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate User after migrations: %w", err)
+	}
+	if err := db.AutoMigrate(&models.Market{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate Market after migrations: %w", err)
+	}
+	if err := db.AutoMigrate(&models.MarketOption{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate MarketOption after migrations: %w", err)
 	}
 
 	log.Printf("migration - MigrateDB: database migrations completed")

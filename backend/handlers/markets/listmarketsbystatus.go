@@ -103,9 +103,13 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 }
 
 // ListMarketsByStatus fetches markets from the database using the provided filter function and limit
-func ListMarketsByStatus(db *gorm.DB, filterFunc MarketFilterFunc, limit int) ([]models.Market, error) {
+func ListMarketsByStatus(db *gorm.DB, filterFunc MarketFilterFunc, limit ...int) ([]models.Market, error) {
 	var markets []models.Market
-	query := filterFunc(db).Order("created_at DESC").Limit(limit)
+	maxResults := 100
+	if len(limit) > 0 && limit[0] > 0 {
+		maxResults = limit[0]
+	}
+	query := filterFunc(db).Order("created_at DESC").Limit(maxResults)
 	result := query.Find(&markets)
 	if result.Error != nil {
 		log.Printf("Error fetching filtered markets: %v", result.Error)

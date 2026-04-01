@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../../config';
+import { useAuth } from '../../../helpers/AuthContent';
 
 const useUserCredit = (username) => {
     const [userCredit, setUserCredit] = useState(null);
-    const [loading, setLoading] = useState(true); // Make sure this state is named correctly
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { token } = useAuth();
 
     useEffect(() => {
       const fetchCredit = async () => {
         try {
-          const response = await fetch(`${API_URL}/v0/usercredit/${username}`);
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`${API_URL}/v0/usercredit/${username}`, { headers });
           if (!response.ok) {
             throw new Error('Failed to fetch user credit');
           }
-          const data = await response.json();;
+          const data = await response.json();
           setUserCredit(data.credit);
         } catch (error) {
           console.error('Error fetching user credit:', error);
@@ -26,7 +35,7 @@ const useUserCredit = (username) => {
       if (username) {
         fetchCredit();
       }
-    }, [username]);
+    }, [username, token]);
 
     return { userCredit, loading, error };
   };

@@ -7,7 +7,7 @@ import (
 	"socialpredict/models"
 	"socialpredict/security"
 	"socialpredict/util"
-	"time"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
@@ -36,7 +36,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Parse the request body
 	type loginRequest struct {
-		Username string `json:"username" validate:"required,min=3,max=30,username"`
+		Email    string `json:"email" validate:"omitempty,email"`
+		Username string `json:"username" validate:"omitempty,min=3,max=30,username"`
 		Password string `json:"password" validate:"required,min=1"`
 	}
 
@@ -53,20 +54,30 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sanitize username (basic sanitization for login)
-	sanitizedUsername, err := securityService.Sanitizer.SanitizeUsername(req.Username)
-	if err != nil {
-		http.Error(w, "Invalid username format", http.StatusBadRequest)
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	if req.Email == "" && req.Username == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
 		return
 	}
-	req.Username = sanitizedUsername
+
+	if req.Username != "" {
+		sanitizedUsername, err := securityService.Sanitizer.SanitizeUsername(req.Username)
+		if err != nil {
+			http.Error(w, "Invalid username format", http.StatusBadRequest)
+			return
+		}
+		req.Username = sanitizedUsername
+	}
 
 	// Use database connection
 	db := util.GetDB()
 
-	// Find user by username
+	// Find user by email first, with username fallback kept for compatibility.
 	var user models.User
-	result := db.Where("username = ?", req.Username).First(&user)
+	result := db.Where("LOWER(email) = ?", req.Email).First(&user)
+	if result.Error == gorm.ErrRecordNotFound && req.Username != "" {
+		result = db.Where("username = ?", req.Username).First(&user)
+	}
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
@@ -82,19 +93,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create UserClaim
-	claims := &UserClaims{
-		Username: user.Username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-		},
+	if !user.IsVerified {
+		http.Error(w, "Account verification required", http.StatusForbidden)
+		return
 	}
 
-	// Create a new token object
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString(getJWTKey())
+	tokenString, err := CreateTokenString(&user)
 	if err != nil {
 		http.Error(w, "Error creating token", http.StatusInternalServerError)
 		return
@@ -107,7 +111,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	responseData := map[string]interface{}{
 		"token":              tokenString,
 		"username":           user.Username,
-		"usertype":           user.UserType,
+		"role":               user.Role,
+		"usertype":           user.Role,
+		"isVerified":         user.IsVerified,
 		"mustChangePassword": user.MustChangePassword,
 	}
 	json.NewEncoder(w).Encode(responseData)

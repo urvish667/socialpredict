@@ -18,12 +18,6 @@ func TestGetPublicUserInfo(t *testing.T) {
 			UserType:              "regular",
 			InitialAccountBalance: 1000,
 			AccountBalance:        500,
-			PersonalEmoji:         "😊",
-			Description:           "Test description",
-			PersonalLink1:         "http://link1.com",
-			PersonalLink2:         "http://link2.com",
-			PersonalLink3:         "http://link3.com",
-			PersonalLink4:         "http://link4.com",
 		},
 		PrivateUser: models.PrivateUser{
 			Email:    "testuser@example.com",
@@ -44,12 +38,6 @@ func TestGetPublicUserInfo(t *testing.T) {
 		UserType:              "regular",
 		InitialAccountBalance: 1000,
 		AccountBalance:        500,
-		PersonalEmoji:         "😊",
-		Description:           "Test description",
-		PersonalLink1:         "http://link1.com",
-		PersonalLink2:         "http://link2.com",
-		PersonalLink3:         "http://link3.com",
-		PersonalLink4:         "http://link4.com",
 	}
 
 	if retrievedUser != expectedUser {
