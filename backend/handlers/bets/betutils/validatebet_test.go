@@ -14,7 +14,7 @@ func TestValidateBuy(t *testing.T) {
 	user := &models.User{
 		PublicUser: models.PublicUser{
 			Username:       "testuser",
-			AccountBalance: 0,
+			VirtualBalance: 0,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestValidateSale(t *testing.T) {
 	user := &models.User{
 		PublicUser: models.PublicUser{
 			Username:       "testuser",
-			AccountBalance: 0,
+			VirtualBalance: 0,
 		},
 	}
 

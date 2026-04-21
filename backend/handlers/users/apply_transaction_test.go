@@ -33,7 +33,7 @@ func TestApplyTransactionToUser(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		err := ApplyTransactionToUser(user.Username, tc.amount, db, tc.txType)
+		err := ApplyTransactionToUser(user.Username, tc.amount, db, tc.txType, BalanceTypeVirtual)
 		var updated models.User
 		if err := db.Where("username = ?", user.Username).First(&updated).Error; err != nil {
 			t.Fatalf("failed to fetch user after update: %v", err)
@@ -47,8 +47,8 @@ func TestApplyTransactionToUser(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected error for type %s: %v", tc.txType, err)
 		}
-		if updated.AccountBalance != tc.expectBalance {
-			t.Errorf("after %s, expected balance %d, got %d", tc.txType, tc.expectBalance, updated.AccountBalance)
+		if updated.VirtualBalance != tc.expectBalance {
+			t.Errorf("after %s, expected balance %d, got %d", tc.txType, tc.expectBalance, updated.VirtualBalance)
 		}
 	}
 }
@@ -57,9 +57,46 @@ func TestApplyTransactionToUser_UserNotFound(t *testing.T) {
 	db := modelstesting.NewFakeDB(t)
 	// Do NOT insert any user — username does not exist in the DB
 
-	err := ApplyTransactionToUser("ghost_user", 50, db, TransactionWin)
+	err := ApplyTransactionToUser("ghost_user", 50, db, TransactionWin, BalanceTypeVirtual)
 	if err == nil {
 		t.Fatal("expected error for non-existent user, got nil")
 	}
 }
 
+func TestApplyTransactionToUser_RealBalance(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+
+	user := modelstesting.GenerateUser("realbalanceuser", 100)
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	if err := ApplyTransactionToUser(user.Username, 75, db, TransactionWin, BalanceTypeReal); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var updated models.User
+	if err := db.Where("username = ?", user.Username).First(&updated).Error; err != nil {
+		t.Fatalf("failed to fetch user after update: %v", err)
+	}
+	if updated.VirtualBalance != 100 {
+		t.Fatalf("expected virtual balance to remain 100, got %d", updated.VirtualBalance)
+	}
+	if updated.RealBalance != 75 {
+		t.Fatalf("expected real balance 75, got %d", updated.RealBalance)
+	}
+}
+
+func TestApplyTransactionToUser_UnknownBalanceType(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+
+	user := modelstesting.GenerateUser("badbalancetypeuser", 100)
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	err := ApplyTransactionToUser(user.Username, 75, db, TransactionWin, "mystery")
+	if err == nil {
+		t.Fatal("expected error for unknown balance type, got nil")
+	}
+}

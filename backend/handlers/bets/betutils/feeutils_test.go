@@ -18,7 +18,7 @@ func TestGetUserInitialBetFee(t *testing.T) {
 	user := &models.User{
 		PublicUser: models.PublicUser{
 			Username:       "testuser",
-			AccountBalance: 1000,
+			VirtualBalance: 1000,
 		},
 	}
 	if err := db.Create(user).Error; err != nil {

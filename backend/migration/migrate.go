@@ -114,6 +114,9 @@ func MigrateDB(db *gorm.DB) error {
 	if err := db.AutoMigrate(&models.MarketOption{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate MarketOption after migrations: %w", err)
 	}
+	if err := db.AutoMigrate(&models.Bet{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate Bet after migrations: %w", err)
+	}
 
 	log.Printf("migration - MigrateDB: database migrations completed")
 	return nil

@@ -72,11 +72,11 @@ func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEco
 	var resultBet *models.Bet
 	err := db.Transaction(func(tx *gorm.DB) error {
 		// Atomic conditional deduction:
-		// Only succeeds if account_balance - totalCost >= minimumBalance.
+		// Only succeeds if virtual_balance - totalCost >= minimumBalance.
 		// If a concurrent request already deducted funds, RowsAffected == 0 and we abort.
 		res := tx.Model(&models.User{}).
-			Where("username = ? AND account_balance - ? >= ?", user.Username, totalCost, minimumBalance).
-			UpdateColumn("account_balance", gorm.Expr("account_balance - ?", totalCost))
+			Where("username = ? AND virtual_balance - ? >= ?", user.Username, totalCost, minimumBalance).
+			UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", totalCost))
 		if res.Error != nil {
 			return res.Error
 		}
@@ -93,15 +93,15 @@ func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEco
 			if err := tx.Model(user).Update("has_placed_bet", true).Error; err != nil {
 				return fmt.Errorf("failed to update first bet status: %w", err)
 			}
-			
+
 			// Award referral bonus if referred by someone
 			if user.ReferredBy != "" {
 				// Bonus amount: R100 = 10,000 cents
 				bonusAmount := int64(10000)
 				res := tx.Model(&models.User{}).
 					Where("referral_code = ?", user.ReferredBy).
-					UpdateColumn("account_balance", gorm.Expr("account_balance + ?", bonusAmount))
-				
+					UpdateColumn("virtual_balance", gorm.Expr("virtual_balance + ?", bonusAmount))
+
 				if res.Error != nil {
 					log.Printf("Referral bonus failed for code %s: %v", user.ReferredBy, res.Error)
 					// We don't necessarily want to fail the WHOLE bet if the referral bonus fails,
@@ -123,9 +123,8 @@ func checkUserBalance(user *models.User, betRequest models.Bet, sumOfBetFees int
 	maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
 
 	// Check if the user's balance after the bet would be lower than the allowed maximum debt
-	if user.AccountBalance-betRequest.Amount-sumOfBetFees < -maximumDebtAllowed {
+	if user.VirtualBalance-betRequest.Amount-sumOfBetFees < -maximumDebtAllowed {
 		return fmt.Errorf("Insufficient balance")
 	}
 	return nil
 }
-

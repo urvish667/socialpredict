@@ -26,7 +26,7 @@ func DailyLoginStreakHandler(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	
+
 	lastLogin := time.Unix(user.LastLoginDate, 0).UTC()
 	lastLoginDay := time.Date(lastLogin.Year(), lastLogin.Month(), lastLogin.Day(), 0, 0, 0, 0, time.UTC)
 
@@ -43,11 +43,11 @@ func DailyLoginStreakHandler(w http.ResponseWriter, r *http.Request) {
 			if user.CurrentStreak == 7 {
 				// Award 200 Coins bonus
 				bonusAmount := int64(20000)
-				user.AccountBalance += bonusAmount
+				user.VirtualBalance += bonusAmount
 				bonusAwarded = true
 				message = fmt.Sprintf("7-day streak reached! 200 bonus coins awarded.")
 				// Reset streak after bonus
-				user.CurrentStreak = 0 
+				user.CurrentStreak = 0
 			} else {
 				message = fmt.Sprintf("Streak continued! Day %d", user.CurrentStreak)
 			}
@@ -75,6 +75,6 @@ func DailyLoginStreakHandler(w http.ResponseWriter, r *http.Request) {
 		"message":       message,
 		"currentStreak": user.CurrentStreak,
 		"bonusAwarded":  bonusAwarded,
-		"balance":       user.AccountBalance,
+		"balance":       user.VirtualBalance,
 	})
 }

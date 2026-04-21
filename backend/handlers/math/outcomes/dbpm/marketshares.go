@@ -3,7 +3,7 @@ package dbpm
 import (
 	"log"
 	"math"
-	marketmath "socialpredict/handlers/math/market"
+	rawvolume "socialpredict/handlers/math/marketvolume"
 	"socialpredict/handlers/math/probabilities/wpam"
 	"socialpredict/models"
 	"socialpredict/setup"
@@ -44,14 +44,14 @@ func DivideUpMarketPoolSharesDBPM(bets []models.Bet, probabilityChanges []wpam.P
 
 	// Get the total share pool as a float for precision
 	// Do not include the initial market subsidization in volume until market hits final resolution
-	totalSharePool := float64(marketmath.GetMarketVolume(bets))
+	totalSharePool := float64(rawvolume.GetMarketVolume(bets))
 
 	// Initial condition, shares set to zero
 	yesShares := int64(0)
 	noShares := int64(0)
 
 	// Check case where there is only one bet
-	if marketmath.GetMarketVolume(bets) == 1 {
+	if rawvolume.GetMarketVolume(bets) == 1 {
 		yesShares, noShares = singleCreditYesNoAllocator(bets)
 	} else {
 		// Calculate YES and NO pools using floating-point arithmetic
@@ -148,7 +148,7 @@ func calculateExcess(bets []models.Bet, scaledPayouts []int64) int64 {
 	for _, payout := range scaledPayouts {
 		sumScaledPayouts += payout
 	}
-	availablePool := marketmath.GetMarketVolume(bets)
+	availablePool := rawvolume.GetMarketVolume(bets)
 	return sumScaledPayouts - availablePool
 }
 

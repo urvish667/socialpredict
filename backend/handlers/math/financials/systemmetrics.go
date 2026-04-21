@@ -61,7 +61,7 @@ func ComputeSystemMetrics(db *gorm.DB, loadEcon setup.EconConfigLoader) (SystemM
 	)
 
 	for i := range users {
-		balance := users[i].PublicUser.AccountBalance
+		balance := users[i].PublicUser.VirtualBalance
 
 		// Calculate unused debt capacity for this user
 		// Formula: maxDebtAllowed - max(0, -balance)

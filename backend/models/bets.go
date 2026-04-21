@@ -8,15 +8,17 @@ import (
 
 type Bet struct {
 	gorm.Model
-	Action   string    `json:"action"`
-	ID       uint      `json:"id" gorm:"primary_key"`
-	Username string    `json:"username"`
-	User     User      `gorm:"foreignKey:Username;references:Username"`
-	MarketID uint      `json:"marketId"`
-	Market   Market    `gorm:"foreignKey:ID;references:MarketID"`
-	Amount   int64     `json:"amount"`
-	PlacedAt time.Time `json:"placedAt"`
-	Outcome  string    `json:"outcome,omitempty"`
+	Action   string `json:"action"`
+	ID       uint   `json:"id" gorm:"primary_key"`
+	Username string `json:"username"`
+	User     User   `gorm:"foreignKey:Username;references:Username"`
+	MarketID uint   `json:"marketId"`
+	Market   Market `gorm:"foreignKey:ID;references:MarketID"`
+	Amount   int64  `json:"amount"`
+	// RequestedAmount preserves the original credit amount requested for sell bets.
+	RequestedAmount int64     `json:"requestedAmount,omitempty"`
+	PlacedAt        time.Time `json:"placedAt"`
+	Outcome         string    `json:"outcome,omitempty"`
 }
 
 type Bets []Bet

@@ -70,7 +70,7 @@ func GenerateUser(username string, startingBalance int64) models.User {
 			DisplayName:           fmt.Sprintf("%s_display_%s", username, uniqueId),
 			UserType:              models.RoleUser,
 			InitialAccountBalance: startingBalance,
-			AccountBalance:        startingBalance,
+			VirtualBalance:        startingBalance,
 		},
 		PrivateUser: models.PrivateUser{
 			Email:       fmt.Sprintf("%s_%s@example.com", username, uniqueId),

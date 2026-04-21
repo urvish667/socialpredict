@@ -60,7 +60,7 @@ func calculateUserCredit(db *gorm.DB, username string, maximumdebt int64) int64 
 	userPublicInfo := publicuser.GetPublicUserInfo(db, username)
 
 	// Streamlining virtual currency: Return only actual balance, excluding debt limit
-	userCredit := userPublicInfo.AccountBalance
+	userCredit := userPublicInfo.VirtualBalance
 
 	return int64(userCredit)
 }

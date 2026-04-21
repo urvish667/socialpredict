@@ -9,7 +9,7 @@ import (
 
 // ComputeUserFinancials calculates comprehensive financial metrics for a user
 // using only existing models and stateless computations
-func ComputeUserFinancials(db *gorm.DB, username string, accountBalance int64, econ *setup.EconomicConfig) (map[string]int64, error) {
+func ComputeUserFinancials(db *gorm.DB, username string, virtualBalance int64, econ *setup.EconomicConfig) (map[string]int64, error) {
 	positions, err := positionsmath.CalculateAllUserMarketPositions_WPAM_DBPM(db, username)
 	if err != nil {
 		return nil, err
@@ -53,17 +53,17 @@ func ComputeUserFinancials(db *gorm.DB, username string, accountBalance int64, e
 	}
 
 	amountBorrowed := int64(0)
-	if accountBalance < 0 {
-		amountBorrowed = -accountBalance
+	if virtualBalance < 0 {
+		amountBorrowed = -virtualBalance
 	}
 
-	retainedEarnings := accountBalance - amountInPlay
+	retainedEarnings := virtualBalance - amountInPlay
 	equity := retainedEarnings + amountInPlay - amountBorrowed
 	totalProfits := tradingProfits + workProfits
 
 	return map[string]int64{
 		// Original required fields from checkpoint
-		"accountBalance":     accountBalance,
+		"virtualBalance":     virtualBalance,
 		"maximumDebtAllowed": econ.Economics.User.MaximumDebtAllowed,
 		"amountInPlay":       amountInPlay,
 		"amountBorrowed":     amountBorrowed,

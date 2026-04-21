@@ -9,7 +9,7 @@ import (
 )
 
 // TestProcessSellRequest_BalanceCredited verifies that after a successful sell:
-//  1. The user's account_balance is increased by the sale value in the DB.
+//  1. The user's virtual_balance is increased by the sale value in the DB.
 //  2. A new Bet row with a negative Amount is persisted.
 //
 // This test exercises the db.Transaction wrapping in ProcessSellRequest — both writes
@@ -36,12 +36,12 @@ func TestProcessSellRequest_BalanceCredited(t *testing.T) {
 	}
 	// Reflect the buy cost in the DB balance
 	db.Model(&models.User{}).Where("username = ?", user.Username).
-		UpdateColumn("account_balance", startingBalance-buyBet.Amount)
+		UpdateColumn("virtual_balance", startingBalance-buyBet.Amount)
 
 	// Reload user struct to reflect DB state
 	var dbUser models.User
 	db.Where("username = ?", user.Username).First(&dbUser)
-	balanceBeforeSell := dbUser.AccountBalance
+	balanceBeforeSell := dbUser.VirtualBalance
 
 	// Count bets before processing the sell
 	var betCountBefore int64
@@ -61,9 +61,9 @@ func TestProcessSellRequest_BalanceCredited(t *testing.T) {
 	// Verify balance increased
 	var updatedUser models.User
 	db.Where("username = ?", user.Username).First(&updatedUser)
-	if updatedUser.AccountBalance <= balanceBeforeSell {
+	if updatedUser.VirtualBalance <= balanceBeforeSell {
 		t.Errorf("expected balance to increase after sell, before=%d after=%d",
-			balanceBeforeSell, updatedUser.AccountBalance)
+			balanceBeforeSell, updatedUser.VirtualBalance)
 	}
 
 	// Verify a new (negative-amount) bet record was created
@@ -77,5 +77,34 @@ func TestProcessSellRequest_BalanceCredited(t *testing.T) {
 	db.Where("username = ? AND amount < 0", user.Username).Last(&saleBet)
 	if saleBet.Amount >= 0 {
 		t.Errorf("expected sale bet to have negative amount, got %d", saleBet.Amount)
+	}
+}
+
+func TestProcessSellRequest_MultipleChoiceMarketNotSupported(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+	cfg := modelstesting.GenerateEconomicConfig()
+
+	user := modelstesting.GenerateUser("seller-mc", 1000)
+	market := modelstesting.GenerateMarket(2, user.Username)
+	market.OutcomeType = models.OutcomeTypeMultipleChoice
+
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	if err := db.Create(&market).Error; err != nil {
+		t.Fatalf("create market: %v", err)
+	}
+
+	redeemRequest := &models.Bet{
+		MarketID: 2,
+		Amount:   100,
+		Outcome:  "Option A",
+	}
+	err := ProcessSellRequest(db, redeemRequest, &user, cfg)
+	if err == nil {
+		t.Fatal("expected multiple-choice sell to fail")
+	}
+	if err.Error() != "selling not supported on multiple-choice markets" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

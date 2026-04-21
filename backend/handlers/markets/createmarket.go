@@ -263,7 +263,7 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 		marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
 		maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
 
-		if user.AccountBalance-marketCreateFee < -maximumDebtAllowed {
+		if user.VirtualBalance-marketCreateFee < -maximumDebtAllowed {
 			http.Error(w, "Insufficient balance", http.StatusBadRequest)
 			return
 		}
@@ -271,8 +271,8 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 		// Atomically deduct the fee and create the market + options in a single transaction.
 		txErr := db.Transaction(func(tx *gorm.DB) error {
 			res := tx.Model(&models.User{}).
-				Where("username = ? AND account_balance - ? >= ?", user.Username, marketCreateFee, -maximumDebtAllowed).
-				UpdateColumn("account_balance", gorm.Expr("account_balance - ?", marketCreateFee))
+				Where("username = ? AND virtual_balance - ? >= ?", user.Username, marketCreateFee, -maximumDebtAllowed).
+				UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", marketCreateFee))
 			if res.Error != nil {
 				return res.Error
 			}

@@ -105,7 +105,7 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate initial account balance for display purposes later, though actual deposit is on verify
 	appConfig, _ := setup.LoadEconomicsConfig()
-	
+
 	// Create Unverified User
 	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
 	expiry := time.Now().Add(10 * time.Minute).Unix() // 10 minute expiry
@@ -118,7 +118,7 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 			DisplayName:           util.UniqueDisplayName(db),
 			UserType:              models.RoleUser,
 			InitialAccountBalance: appConfig.Economics.User.InitialAccountBalance,
-			AccountBalance:        0, // Awarded ONLY on verification
+			VirtualBalance:        0, // Awarded ONLY on verification
 			ReferredBy:            req.ReferralCode,
 		},
 		PrivateUser: models.PrivateUser{
@@ -215,17 +215,17 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	user.IsVerified = true
 	user.PhoneVerified = true
 	user.EmailVerified = true // Assuming email is verified synchronously for this spec
-	
+
 	// 2. Generate Referral Code
 	user.ReferralCode = generateReferralCode()
-	
+
 	// 3. Award R250 instantly (25000 cents in integer math representation typically, but let's check InitialAccountBalance)
 	appConfig, _ := setup.LoadEconomicsConfig()
-	user.AccountBalance = appConfig.Economics.User.InitialAccountBalance
-	if user.AccountBalance == 0 {
+	user.VirtualBalance = appConfig.Economics.User.InitialAccountBalance
+	if user.VirtualBalance == 0 {
 		// Fallback to R250 default
-		user.AccountBalance = 25000 
-		user.InitialAccountBalance = 25000 
+		user.VirtualBalance = 25000
+		user.InitialAccountBalance = 25000
 	}
 
 	// Clear OTP
@@ -258,6 +258,7 @@ func VerifyRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 const letterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 func generateReferralCode() string {
 	b := make([]byte, 8)
 	for i := range b {

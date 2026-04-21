@@ -31,15 +31,15 @@ func TestGetMarketVolumeWithDust(t *testing.T) {
 			expectedWithDust: 300, // No sells, so no dust
 		},
 		{
-			name: "mixed buys and sells - with dust",
+			name: "mixed buys and sells - with recorded dust",
 			bets: []models.Bet{
 				modelstesting.GenerateBet(100, "YES", "user1", 1, 0),
 				modelstesting.GenerateBet(200, "NO", "user2", 1, time.Minute),
-				modelstesting.GenerateBet(-50, "YES", "user1", 1, 2*time.Minute), // Sell
-				modelstesting.GenerateBet(-75, "NO", "user2", 1, 3*time.Minute),  // Sell
+				generateSellBetForDust(-50, 53, "YES", "user1", 1, 2*time.Minute),
+				generateSellBetForDust(-75, 76, "NO", "user2", 1, 3*time.Minute),
 			},
 			expectedBase:     175, // 100 + 200 - 50 - 75
-			expectedWithDust: 177, // Base + 2 dust (1 per sell as placeholder)
+			expectedWithDust: 176, // Base + replayed sell dust
 		},
 	}
 
@@ -78,22 +78,22 @@ func TestCalculateDustStack(t *testing.T) {
 			expectedDust: 0,
 		},
 		{
-			name: "only sell bets",
+			name: "only sell bets cannot infer dust without a pre-sale position",
 			bets: []models.Bet{
-				modelstesting.GenerateBet(-50, "YES", "user1", 1, 0),
-				modelstesting.GenerateBet(-75, "NO", "user2", 1, time.Minute),
+				generateSellBetForDust(-50, 50, "YES", "user1", 1, 0),
+				generateSellBetForDust(-75, 75, "NO", "user2", 1, time.Minute),
 			},
-			expectedDust: 2, // 1 dust per sell (placeholder implementation)
+			expectedDust: 0,
 		},
 		{
 			name: "mixed bets - chronological order matters",
 			bets: []models.Bet{
-				modelstesting.GenerateBet(100, "YES", "user1", 1, 0),            // Buy first
-				modelstesting.GenerateBet(-50, "YES", "user1", 1, time.Minute),  // Sell second
-				modelstesting.GenerateBet(200, "NO", "user2", 1, 2*time.Minute), // Buy third
-				modelstesting.GenerateBet(-75, "NO", "user2", 1, 3*time.Minute), // Sell fourth
+				modelstesting.GenerateBet(100, "YES", "user1", 1, 0),
+				generateSellBetForDust(-50, 53, "YES", "user1", 1, time.Minute),
+				modelstesting.GenerateBet(200, "NO", "user2", 1, 2*time.Minute),
+				generateSellBetForDust(-75, 76, "NO", "user2", 1, 3*time.Minute),
 			},
-			expectedDust: 2, // 2 sells = 2 dust points
+			expectedDust: 3,
 		},
 	}
 
@@ -110,35 +110,38 @@ func TestCalculateDustStack(t *testing.T) {
 func TestGetMarketDust(t *testing.T) {
 	bets := []models.Bet{
 		modelstesting.GenerateBet(100, "YES", "user1", 1, 0),
-		modelstesting.GenerateBet(-50, "YES", "user1", 1, time.Minute),
-		modelstesting.GenerateBet(-25, "NO", "user2", 1, 2*time.Minute),
+		generateSellBetForDust(-50, 52, "YES", "user1", 1, time.Minute),
+		generateSellBetForDust(-25, 25, "NO", "user2", 1, 2*time.Minute),
 	}
 
 	dust := GetMarketDust(bets)
-	expectedDust := int64(2) // 2 sells = 2 dust points
+	expectedDust := int64(2)
 
 	if dust != expectedDust {
 		t.Errorf("expected dust %d, got %d", expectedDust, dust)
 	}
 }
 
-func TestCalculateDustForSell_Placeholder(t *testing.T) {
-	// Test the placeholder implementation
-	sellBet := modelstesting.GenerateBet(-50, "YES", "user1", 1, 0)
+func TestCalculateDustForSell(t *testing.T) {
+	sellBet := generateSellBetForDust(-50, 52, "YES", "user1", 1, time.Minute)
 	buyBet := modelstesting.GenerateBet(100, "YES", "user1", 1, 0)
 
 	allBets := []models.Bet{buyBet, sellBet}
 
-	// Test sell bet
 	dust := calculateDustForSell(sellBet, allBets)
-	if dust != 1 {
-		t.Errorf("expected 1 dust for sell bet, got %d", dust)
+	if dust != 2 {
+		t.Errorf("expected 2 dust for sell bet, got %d", dust)
 	}
 
-	// Test buy bet
 	dust = calculateDustForSell(buyBet, allBets)
 	if dust != 0 {
 		t.Errorf("expected 0 dust for buy bet, got %d", dust)
+	}
+
+	legacySellBet := modelstesting.GenerateBet(-50, "YES", "user1", 1, 2*time.Minute)
+	dust = calculateDustForSell(legacySellBet, []models.Bet{buyBet, legacySellBet})
+	if dust != 0 {
+		t.Errorf("expected 0 dust when requested credits are not recorded, got %d", dust)
 	}
 }
 
@@ -173,4 +176,10 @@ func TestCurrencyConservationInvariant(t *testing.T) {
 			}
 		})
 	}
+}
+
+func generateSellBetForDust(amount, requestedAmount int64, outcome, username string, marketID uint, offset time.Duration) models.Bet {
+	bet := modelstesting.GenerateBet(amount, outcome, username, marketID, offset)
+	bet.RequestedAmount = requestedAmount
+	return bet
 }

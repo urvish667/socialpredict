@@ -43,7 +43,7 @@ func GetUserFinancialHandlerWithDB(db *gorm.DB, econConfigLoader func() (*setup.
 		}
 
 		// Compute comprehensive financial snapshot
-		snapshot, err := financials.ComputeUserFinancials(db, username, userPublicInfo.AccountBalance, econ)
+		snapshot, err := financials.ComputeUserFinancials(db, username, userPublicInfo.VirtualBalance, econ)
 		if err != nil {
 			log.Printf("Error generating user financial snapshot: %v", err)
 			http.Error(w, "Unable to generate financial snapshot", http.StatusInternalServerError)

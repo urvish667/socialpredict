@@ -62,7 +62,7 @@ func TestGetUserFinancialHandler_ValidUser(t *testing.T) {
 
 	// Check required fields
 	requiredFields := []string{
-		"accountBalance", "maximumDebtAllowed", "amountInPlay", "amountBorrowed",
+		"virtualBalance", "maximumDebtAllowed", "amountInPlay", "amountBorrowed",
 		"retainedEarnings", "equity", "tradingProfits", "workProfits", "totalProfits",
 		"amountInPlayActive", "totalSpent", "totalSpentInPlay", "realizedProfits",
 		"potentialProfits", "realizedValue", "potentialValue",
@@ -75,8 +75,8 @@ func TestGetUserFinancialHandler_ValidUser(t *testing.T) {
 	}
 
 	// Verify specific values for clean user
-	if financialData["accountBalance"] != float64(1000) {
-		t.Errorf("Expected accountBalance 1000, got %v", financialData["accountBalance"])
+	if financialData["virtualBalance"] != float64(1000) {
+		t.Errorf("Expected virtualBalance 1000, got %v", financialData["virtualBalance"])
 	}
 	if financialData["amountInPlay"] != float64(0) {
 		t.Errorf("Expected amountInPlay 0 for new user, got %v", financialData["amountInPlay"])

@@ -2,6 +2,7 @@ package marketmath
 
 import (
 	"log"
+	rawvolume "socialpredict/handlers/math/marketvolume"
 	"socialpredict/models"
 	"socialpredict/setup"
 )
@@ -20,15 +21,7 @@ func init() {
 
 // getMarketVolume returns the total volume of trades for a given market
 func GetMarketVolume(bets []models.Bet) int64 {
-
-	var totalVolume int64
-	for _, bet := range bets {
-		totalVolume += bet.Amount
-	}
-
-	totalVolumeUint := int64(totalVolume)
-
-	return totalVolumeUint
+	return rawvolume.GetMarketVolume(bets)
 }
 
 // returns the market volume + subsidization added into pool,

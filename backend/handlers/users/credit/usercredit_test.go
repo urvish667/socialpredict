@@ -13,7 +13,7 @@ func TestCalculateUserCredit(t *testing.T) {
 	testCases := []struct {
 		username       string
 		displayName    string
-		accountBalance int64
+		VirtualBalance int64
 		maximumDebt    int64
 		expectedCredit int64
 	}{
@@ -31,7 +31,7 @@ func TestCalculateUserCredit(t *testing.T) {
 				Username:       tc.username,
 				DisplayName:    tc.displayName,
 				UserType:       "REGULAR",
-				AccountBalance: tc.accountBalance,
+				VirtualBalance: tc.VirtualBalance,
 			},
 			PrivateUser: models.PrivateUser{
 				Email:    tc.username + "@example.com",
@@ -46,7 +46,7 @@ func TestCalculateUserCredit(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("Username=%s_AccountBalance=%d_MaximumDebt=%d", tc.username, tc.accountBalance, tc.maximumDebt), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Username=%s_AccountBalance=%d_MaximumDebt=%d", tc.username, tc.VirtualBalance, tc.maximumDebt), func(t *testing.T) {
 			credit := calculateUserCredit(db, tc.username, tc.maximumDebt)
 			if credit != tc.expectedCredit {
 				t.Errorf(

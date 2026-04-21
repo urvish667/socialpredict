@@ -39,13 +39,14 @@ type PublicUser struct {
 	PostalCode            string `json:"postalCode"`
 	UserType              string `json:"usertype" gorm:"not null"`
 	InitialAccountBalance int64  `json:"initialAccountBalance"`
-	AccountBalance        int64  `json:"accountBalance"`
-	
+	VirtualBalance        int64  `json:"virtualBalance" gorm:"not null;default:0"`
+	RealBalance           int64  `json:"realBalance" gorm:"not null;default:0"`
+
 	// Referral & Growth Engine
-	ReferralCode          string `json:"referralCode"`
-	ReferredBy            string `json:"referredBy,omitempty"`
-	HasPlacedBet          bool   `json:"hasPlacedBet" gorm:"default:false"`
-	CurrentStreak         int    `json:"currentStreak" gorm:"default:0"`
+	ReferralCode  string `json:"referralCode"`
+	ReferredBy    string `json:"referredBy,omitempty"`
+	HasPlacedBet  bool   `json:"hasPlacedBet" gorm:"default:false"`
+	CurrentStreak int    `json:"currentStreak" gorm:"default:0"`
 }
 
 type PrivateUser struct {
@@ -55,7 +56,7 @@ type PrivateUser struct {
 	PhoneVerified bool   `json:"phoneVerified" gorm:"default:false"`
 	APIKey        string `json:"apiKey,omitempty" gorm:"unique"`
 	Password      string `json:"-" gorm:"not null"`
-	
+
 	// OTP Tracking (not exposed to JSON)
 	OTPCode       string `json:"-"`
 	OTPExpiry     int64  `json:"-"`

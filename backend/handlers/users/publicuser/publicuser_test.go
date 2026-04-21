@@ -17,7 +17,7 @@ func TestGetPublicUserInfo(t *testing.T) {
 			DisplayName:           "Test User",
 			UserType:              "regular",
 			InitialAccountBalance: 1000,
-			AccountBalance:        500,
+			VirtualBalance:        500,
 		},
 		PrivateUser: models.PrivateUser{
 			Email:    "testuser@example.com",
@@ -37,7 +37,7 @@ func TestGetPublicUserInfo(t *testing.T) {
 		DisplayName:           "Test User",
 		UserType:              "regular",
 		InitialAccountBalance: 1000,
-		AccountBalance:        500,
+		VirtualBalance:        500,
 	}
 
 	if retrievedUser != expectedUser {

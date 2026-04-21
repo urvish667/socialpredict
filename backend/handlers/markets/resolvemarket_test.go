@@ -106,8 +106,8 @@ func TestResolveMarketHandler_CreatorSuggestsAndAdminFinalizes(t *testing.T) {
 
 	var updatedBettor models.User
 	db.Where("username = ?", "bettor").First(&updatedBettor)
-	if updatedBettor.AccountBalance != 100 {
-		t.Fatalf("expected bettor balance 100 after refund, got %d", updatedBettor.AccountBalance)
+	if updatedBettor.VirtualBalance != 100 {
+		t.Fatalf("expected bettor balance 100 after refund, got %d", updatedBettor.VirtualBalance)
 	}
 }
 

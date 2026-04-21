@@ -42,7 +42,7 @@ func TestComputeSystemMetrics_BalancedAfterFinalLockedBet(t *testing.T) {
 	if err := db.Where("username = ?", users[0].Username).First(&creator).Error; err != nil {
 		t.Fatalf("failed to load market creator: %v", err)
 	}
-	creator.AccountBalance -= creationFee
+	creator.VirtualBalance -= creationFee
 	if err := db.Save(&creator).Error; err != nil {
 		t.Fatalf("failed to charge market creation fee: %v", err)
 	}
@@ -84,8 +84,8 @@ func TestComputeSystemMetrics_BalancedAfterFinalLockedBet(t *testing.T) {
 	var expectedUnusedDebt int64
 	for _, u := range dbUsers {
 		usedDebt := int64(0)
-		if u.AccountBalance < 0 {
-			usedDebt = -u.AccountBalance
+		if u.VirtualBalance < 0 {
+			usedDebt = -u.VirtualBalance
 		}
 		expectedUnusedDebt += maxDebt - usedDebt
 	}

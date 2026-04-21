@@ -65,7 +65,7 @@ func AddUserHandler(loadEconConfig setup.EconConfigLoader) func(http.ResponseWri
 				DisplayName:           util.UniqueDisplayName(db),
 				UserType:              models.RoleUser,
 				InitialAccountBalance: appConfig.Economics.User.InitialAccountBalance,
-				AccountBalance:        appConfig.Economics.User.InitialAccountBalance,
+				VirtualBalance:        appConfig.Economics.User.InitialAccountBalance,
 			},
 			PrivateUser: models.PrivateUser{
 				Email:  util.UniqueEmail(db),

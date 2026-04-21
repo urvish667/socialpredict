@@ -27,14 +27,14 @@ func TestComputeUserFinancials_NewUser_NoPositions(t *testing.T) {
 	}
 
 	// Compute financial snapshot
-	snapshot, err := ComputeUserFinancials(db, user.Username, user.AccountBalance, econ)
+	snapshot, err := ComputeUserFinancials(db, user.Username, user.VirtualBalance, econ)
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
 
 	// Verify core financial metrics for clean user
 	expected := map[string]int64{
-		"accountBalance":     1000,
+		"virtualBalance":     1000,
 		"maximumDebtAllowed": 500,
 		"amountInPlay":       0,
 		"amountBorrowed":     0,
@@ -79,14 +79,14 @@ func TestComputeUserFinancials_NegativeBalance_Borrowing(t *testing.T) {
 	}
 
 	// Compute financial snapshot
-	snapshot, err := ComputeUserFinancials(db, user.Username, user.AccountBalance, econ)
+	snapshot, err := ComputeUserFinancials(db, user.Username, user.VirtualBalance, econ)
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
 
 	// Verify borrowing calculations
-	if snapshot["accountBalance"] != -50 {
-		t.Errorf("Expected accountBalance -50, got %d", snapshot["accountBalance"])
+	if snapshot["virtualBalance"] != -50 {
+		t.Errorf("Expected virtualBalance -50, got %d", snapshot["virtualBalance"])
 	}
 	if snapshot["amountBorrowed"] != 50 {
 		t.Errorf("Expected amountBorrowed 50, got %d", snapshot["amountBorrowed"])
@@ -145,7 +145,7 @@ func TestComputeUserFinancials_WithActivePositions(t *testing.T) {
 
 	// This test would need to be completed with actual market position data
 	// For now, let's verify the function can be called without error
-	_, err := ComputeUserFinancials(db, user.Username, user.AccountBalance, econ)
+	_, err := ComputeUserFinancials(db, user.Username, user.VirtualBalance, econ)
 	if err != nil {
 		t.Fatalf("Expected no error with active positions, got: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestComputeUserFinancials_WithResolvedPositions(t *testing.T) {
 	}
 
 	// This test would need to be completed with actual resolved market position data
-	_, err := ComputeUserFinancials(db, user.Username, user.AccountBalance, econ)
+	_, err := ComputeUserFinancials(db, user.Username, user.VirtualBalance, econ)
 	if err != nil {
 		t.Fatalf("Expected no error with resolved positions, got: %v", err)
 	}
@@ -236,14 +236,14 @@ func TestComputeUserFinancials_MixedPositions(t *testing.T) {
 	}
 
 	// Test mixed positions scenario
-	snapshot, err := ComputeUserFinancials(db, user.Username, user.AccountBalance, econ)
+	snapshot, err := ComputeUserFinancials(db, user.Username, user.VirtualBalance, econ)
 	if err != nil {
 		t.Fatalf("Expected no error with mixed positions, got: %v", err)
 	}
 
 	// Verify that we get a proper response structure
 	requiredFields := []string{
-		"accountBalance", "maximumDebtAllowed", "amountInPlay", "amountBorrowed",
+		"virtualBalance", "maximumDebtAllowed", "amountInPlay", "amountBorrowed",
 		"retainedEarnings", "equity", "tradingProfits", "workProfits", "totalProfits",
 		"amountInPlayActive", "totalSpent", "totalSpentInPlay", "realizedProfits",
 		"potentialProfits", "realizedValue", "potentialValue",

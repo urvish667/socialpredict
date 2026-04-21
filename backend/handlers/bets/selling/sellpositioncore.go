@@ -36,7 +36,16 @@ func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.Use
 		return err
 	}
 
+	var market models.Market
+	if err := db.First(&market, redeemRequest.MarketID).Error; err != nil {
+		return errors.New("error fetching market")
+	}
+	if market.OutcomeType == models.OutcomeTypeMultipleChoice {
+		return errors.New("selling not supported on multiple-choice markets")
+	}
+
 	marketIDStr := strconv.FormatUint(uint64(redeemRequest.MarketID), 10)
+	requestedCredits := redeemRequest.Amount
 
 	userNetPosition, err := getUserNetPositionForMarket(db, marketIDStr, user.Username)
 	if err != nil {
@@ -62,8 +71,10 @@ func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.Use
 		Username: user.Username,
 		MarketID: redeemRequest.MarketID,
 		Amount:   -sharesToSell, // negative share amount means sale
-		PlacedAt: time.Now(),
-		Outcome:  redeemRequest.Outcome,
+		// Keep requested credits so historical dust can be reconstructed.
+		RequestedAmount: requestedCredits,
+		PlacedAt:        time.Now(),
+		Outcome:         redeemRequest.Outcome,
 	}
 
 	if err := betutils.ValidateSale(db, &bet); err != nil {
@@ -73,7 +84,7 @@ func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.Use
 	// Wrap the two DB writes in a single transaction:
 	// credit the user's balance AND record the sale bet atomically.
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := usershandlers.ApplyTransactionToUser(user.Username, actualSaleValue, tx, usershandlers.TransactionSale); err != nil {
+		if err := usershandlers.ApplyTransactionToUser(user.Username, actualSaleValue, tx, usershandlers.TransactionSale, usershandlers.BalanceTypeVirtual); err != nil {
 			return err
 		}
 		if err := tx.Create(&bet).Error; err != nil {
@@ -82,7 +93,6 @@ func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.Use
 		return nil
 	})
 }
-
 
 func getUserNetPositionForMarket(db *gorm.DB, marketIDStr string, username string) (positionsmath.UserMarketPosition, error) {
 	userNetPosition, err := positionsmath.CalculateMarketPositionForUser_WPAM_DBPM(db, marketIDStr, username)

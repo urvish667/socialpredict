@@ -13,7 +13,7 @@ func AdjustUserBalance(db *gorm.DB, username string, delta int64) error {
 		if err := tx.Where("username = ?", username).First(&user).Error; err != nil {
 			return err
 		}
-		user.AccountBalance += delta
+		user.VirtualBalance += delta
 		return tx.Save(&user).Error
 	})
 }
@@ -27,7 +27,7 @@ func SumAllUserBalances(db *gorm.DB) (int64, error) {
 
 	var total int64
 	for _, user := range users {
-		total += user.AccountBalance
+		total += user.VirtualBalance
 	}
 	return total, nil
 }
@@ -41,7 +41,7 @@ func LoadUserBalances(db *gorm.DB) (map[string]int64, error) {
 
 	result := make(map[string]int64, len(users))
 	for _, user := range users {
-		result[user.Username] = user.AccountBalance
+		result[user.Username] = user.VirtualBalance
 	}
 	return result, nil
 }

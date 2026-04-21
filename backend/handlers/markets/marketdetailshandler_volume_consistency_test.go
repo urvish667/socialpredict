@@ -34,6 +34,7 @@ func TestMarketDetailsHandler_VolumeConsistencyFix(t *testing.T) {
 	// User buys shares, then sells all shares back
 	buyBet := modelstesting.GenerateBet(100, "YES", "trader", uint(testMarket.ID), 0)
 	sellBet := modelstesting.GenerateBet(-100, "YES", "trader", uint(testMarket.ID), time.Minute)
+	sellBet.RequestedAmount = 101
 	db.Create(&buyBet)
 	db.Create(&sellBet)
 

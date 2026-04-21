@@ -31,8 +31,8 @@ func TestDistributePayoutsWithRefund_NARefund(t *testing.T) {
 	}
 
 	expectedBalance := int64(50) // Should get the bet amount back
-	if updatedUser.AccountBalance != expectedBalance {
-		t.Errorf("refundbot balance = %d, want %d", updatedUser.AccountBalance, expectedBalance)
+	if updatedUser.VirtualBalance != expectedBalance {
+		t.Errorf("refundbot balance = %d, want %d", updatedUser.VirtualBalance, expectedBalance)
 	}
 }
 
@@ -73,8 +73,8 @@ func TestCalculateAndAllocateProportionalPayouts_NoWinningShares(t *testing.T) {
 	}
 
 	expectedBalance := int64(100)
-	if u.AccountBalance != expectedBalance {
-		t.Errorf("loserbot balance = %d, want %d", u.AccountBalance, expectedBalance)
+	if u.VirtualBalance != expectedBalance {
+		t.Errorf("loserbot balance = %d, want %d", u.VirtualBalance, expectedBalance)
 	}
 }
 
@@ -103,8 +103,8 @@ func TestCalculateAndAllocateProportionalPayouts_SuccessfulPayout(t *testing.T) 
 
 	// At resolution YES, winner gets full payout back from total volume
 	expectedBalance := int64(100)
-	if u.AccountBalance != expectedBalance {
-		t.Errorf("winnerbot balance = %d, want %d", u.AccountBalance, expectedBalance)
+	if u.VirtualBalance != expectedBalance {
+		t.Errorf("winnerbot balance = %d, want %d", u.VirtualBalance, expectedBalance)
 	}
 }
 
@@ -134,7 +134,7 @@ func TestCalculateAndAllocateProportionalPayouts_MultipleChoicePayout(t *testing
 		t.Fatalf("failed to fetch winner: %v", err)
 	}
 
-	if updatedWinner.AccountBalance != 400 {
-		t.Errorf("winner balance = %d, want %d", updatedWinner.AccountBalance, 400)
+	if updatedWinner.VirtualBalance != 400 {
+		t.Errorf("winner balance = %d, want %d", updatedWinner.VirtualBalance, 400)
 	}
 }

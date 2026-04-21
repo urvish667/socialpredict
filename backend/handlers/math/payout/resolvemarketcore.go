@@ -64,7 +64,7 @@ func payoutBinaryMarket(netPositions map[string]map[string]float64, winningOutco
 
 		payout := int64(math.Round(stake * multiplier))
 		if payout > 0 {
-			if err := usersHandlers.ApplyTransactionToUser(username, payout, db, usersHandlers.TransactionWin); err != nil {
+			if err := usersHandlers.ApplyTransactionToUser(username, payout, db, usersHandlers.TransactionWin, usersHandlers.BalanceTypeVirtual); err != nil {
 				return err
 			}
 		}
@@ -81,7 +81,7 @@ func refundAllBets(market *models.Market, db *gorm.DB) error {
 
 	// Refund each bet to the user
 	for _, bet := range bets {
-		if err := usersHandlers.ApplyTransactionToUser(bet.Username, bet.Amount, db, usersHandlers.TransactionRefund); err != nil {
+		if err := usersHandlers.ApplyTransactionToUser(bet.Username, bet.Amount, db, usersHandlers.TransactionRefund, usersHandlers.BalanceTypeVirtual); err != nil {
 			return err
 		}
 	}
@@ -115,7 +115,7 @@ func payoutMultipleChoiceMarket(netPositions map[string]map[string]float64, winn
 
 		payout := int64(math.Round(stake * multiplier))
 		if payout > 0 {
-			if err := usersHandlers.ApplyTransactionToUser(username, payout, db, usersHandlers.TransactionWin); err != nil {
+			if err := usersHandlers.ApplyTransactionToUser(username, payout, db, usersHandlers.TransactionWin, usersHandlers.BalanceTypeVirtual); err != nil {
 				return err
 			}
 		}
@@ -151,7 +151,7 @@ func refundNetPositions(netPositions map[string]map[string]float64, db *gorm.DB)
 		}
 
 		if refund > 0 {
-			if err := usersHandlers.ApplyTransactionToUser(username, refund, db, usersHandlers.TransactionRefund); err != nil {
+			if err := usersHandlers.ApplyTransactionToUser(username, refund, db, usersHandlers.TransactionRefund, usersHandlers.BalanceTypeVirtual); err != nil {
 				return err
 			}
 		}

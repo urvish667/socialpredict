@@ -77,10 +77,10 @@ func TestMarketDetailsHandler_IncludesMarketDust(t *testing.T) {
 		t.Error("Expected total volume to be non-negative")
 	}
 
-	// Verify the corrected logic: volume should include dust
-	// With bets: +100, +50, -25 and 1 dust point from the sell:
-	// Expected volume = (100 + 50 - 25) + 1 dust = 126
-	expectedVolume := int64(126) // 125 + 1 dust
+	// Verify the corrected logic: volume includes dust when a sell has enough
+	// recorded context to infer it. This synthetic sale does not produce
+	// inferable dust, so volume remains the net bet total.
+	expectedVolume := int64(125) // 100 + 50 - 25
 	if response.TotalVolume != expectedVolume {
 		t.Errorf("Expected total volume to be %d (including dust), got %d", expectedVolume, response.TotalVolume)
 	}

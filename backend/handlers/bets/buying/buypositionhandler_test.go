@@ -13,7 +13,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 	user := &models.User{
 		PublicUser: models.PublicUser{
 			Username:       "testuser",
-			AccountBalance: 0,
+			VirtualBalance: 0,
 		},
 	}
 
@@ -36,7 +36,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 	}{
 		// Buying Shares Cases
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, place a bet of 99, fee 1
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, place a bet of 99, fee 1
 			name: "Sufficient balance.",
 			betRequest: models.Bet{
 				Amount: 99,
@@ -45,7 +45,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 			expectsError: false,
 		},
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, place a bet of 1, fee 99
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, place a bet of 1, fee 99
 			name: "Sufficient balance.",
 			betRequest: models.Bet{
 				Amount: 1,
@@ -54,7 +54,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 			expectsError: false,
 		},
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, place a bet of 100, fee 1
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, place a bet of 100, fee 1
 			name: "Insufficient balance, fee prevents bet",
 			betRequest: models.Bet{
 				Amount: 100,
@@ -63,7 +63,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 			expectsError: true,
 		},
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, place a bet of 1, fee 100
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, place a bet of 1, fee 100
 			name: "Insufficient balance, fee prevents bet",
 			betRequest: models.Bet{
 				Amount: 1,
@@ -73,7 +73,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 		},
 		// Selling Shares Cases
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, sell 1, fee 101
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, sell 1, fee 101
 			name: "Sufficient balance.",
 			betRequest: models.Bet{
 				Amount: -1,
@@ -82,7 +82,7 @@ func TestCheckUserBalance_CustomConfig(t *testing.T) {
 			expectsError: false,
 		},
 		{
-			// Starting with AccountBalance 0, MaximumDebtAllowed 100, sell 1, fee 102
+			// Starting with VirtualBalance 0, MaximumDebtAllowed 100, sell 1, fee 102
 			name: "Insufficient balance, fee prevents bet",
 			betRequest: models.Bet{
 				Amount: -1,
@@ -131,8 +131,8 @@ func TestPlaceBetCore_BalanceAdjustment(t *testing.T) {
 	db.First(&updatedUser, "username = ?", "testuser")
 
 	expectedBalance := initialBalance - betRequest.Amount - modelstesting.GenerateEconomicConfig().Economics.Betting.BetFees.InitialBetFee
-	if updatedUser.AccountBalance != expectedBalance {
-		t.Fatalf("Expected balance %d, got %d", expectedBalance, updatedUser.AccountBalance)
+	if updatedUser.VirtualBalance != expectedBalance {
+		t.Fatalf("Expected balance %d, got %d", expectedBalance, updatedUser.VirtualBalance)
 	}
 
 	// Verify that the bet was created successfully
@@ -170,7 +170,7 @@ func TestPlaceBetCore_InsufficientBalance_Atomic(t *testing.T) {
 
 	// Simulate a stale in-memory user with a higher balance so pre-flight passes
 	staleUser := user
-	staleUser.AccountBalance = betAmount + fee // enough to fool the pre-flight check
+	staleUser.VirtualBalance = betAmount + fee // enough to fool the pre-flight check
 
 	_, err := PlaceBetCore(&staleUser, betRequest, db, func() *setup.EconomicConfig { return cfg })
 	if err == nil {
@@ -180,8 +180,7 @@ func TestPlaceBetCore_InsufficientBalance_Atomic(t *testing.T) {
 	// Confirm DB balance was NOT changed
 	var dbUser models.User
 	db.First(&dbUser, "username = ?", user.Username)
-	if dbUser.AccountBalance != startingBalance {
-		t.Errorf("expected DB balance unchanged at %d, got %d", startingBalance, dbUser.AccountBalance)
+	if dbUser.VirtualBalance != startingBalance {
+		t.Errorf("expected DB balance unchanged at %d, got %d", startingBalance, dbUser.VirtualBalance)
 	}
 }
-

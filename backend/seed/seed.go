@@ -46,7 +46,7 @@ func SeedUsers(db *gorm.DB) {
 					DisplayName:           "Administrator",
 					UserType:              models.RoleAdmin,
 					InitialAccountBalance: config.Economics.User.InitialAccountBalance,
-					AccountBalance:        config.Economics.User.InitialAccountBalance,
+					VirtualBalance:        config.Economics.User.InitialAccountBalance,
 				},
 				PrivateUser: models.PrivateUser{
 					Email:  "admin@example.com",

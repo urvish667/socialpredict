@@ -27,7 +27,8 @@ type CombinedUserResponse struct {
 	UserType              string `json:"usertype"`
 	IsVerified            bool   `json:"isVerified"`
 	InitialAccountBalance int64  `json:"initialAccountBalance"`
-	AccountBalance        int64  `json:"accountBalance"`
+	VirtualBalance        int64  `json:"virtualBalance"`
+	RealBalance           int64  `json:"realBalance"`
 	ReferralCode          string `json:"referralCode"`
 	CurrentStreak         int    `json:"currentStreak"`
 }
@@ -75,7 +76,8 @@ func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
 		UserType:              user.Role,
 		IsVerified:            user.IsVerified,
 		InitialAccountBalance: publicInfo.InitialAccountBalance,
-		AccountBalance:        publicInfo.AccountBalance,
+		VirtualBalance:        publicInfo.VirtualBalance,
+		RealBalance:           publicInfo.RealBalance,
 		ReferralCode:          publicInfo.ReferralCode,
 		CurrentStreak:         publicInfo.CurrentStreak,
 	}
