@@ -92,18 +92,25 @@ func ResolveMarketHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Admin access required", http.StatusForbidden)
 			return
 		}
-		if market.Status != models.MarketStatusPendingResolution {
-			http.Error(w, "Market must be pending resolution before admin finalization", http.StatusBadRequest)
+
+		// Admins can finalize if the market is active or pending resolution
+		if market.Status != models.MarketStatusActive && market.Status != models.MarketStatusPendingResolution {
+			http.Error(w, "Market must be active or pending resolution before admin finalization", http.StatusBadRequest)
 			return
 		}
-		if market.ResolutionResult == "" {
-			http.Error(w, "Suggested outcome is required before finalization", http.StatusBadRequest)
+
+		// Use the provided outcome if available, otherwise use the suggested one
+		finalOutcome := resolutionData.Outcome
+		if finalOutcome == "" {
+			finalOutcome = market.ResolutionResult
+		}
+
+		if finalOutcome == "" {
+			http.Error(w, "Resolution outcome is required", http.StatusBadRequest)
 			return
 		}
-		if resolutionData.Outcome != "" && resolutionData.Outcome != market.ResolutionResult {
-			http.Error(w, "Admin finalization must use the suggested outcome", http.StatusBadRequest)
-			return
-		}
+
+		market.ResolutionResult = finalOutcome
 
 		adminID := user.ID
 		market.Status = models.MarketStatusFinalized

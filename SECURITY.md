@@ -2,14 +2,19 @@
 
 ## Supported Versions
 
-At the time of authoring this security policy, we will only support the master branch for the time being. Sorry for any inconvenience this may cause.
+The following versions of ZuriMarket components are currently supported for security updates:
+
+| Component | Supported Version |
+| :--- | :--- |
+| Backend (Go) | v1.0.0 (Go 1.25+) |
+| Frontend (React) | v1.0.0 (React 18+) |
+| Infrastructure | Docker Compose / Elastic Beanstalk |
 
 ## Reporting a Vulnerability
 
-To report a vulnerability, simply create an issue or a pull request.
+We take the security of ZuriMarket seriously. If you find a security vulnerability, please report it via the following methods:
 
-If the vulnerability is serious, we will try to fix it within a week or a few days. If it's not that serious, we'll try to cover it in a month or so cycle.
+1. **GitHub Issues**: For non-sensitive bugs, you can create a public issue.
+2. **Private Disclosure**: If the vulnerability is critical or sensitive, please contact the maintainers directly or use GitHub's private vulnerability reporting feature (if enabled).
 
-We may comment and decline the security vulnerability through discussion and mutual agreement with you if it's found to be not worth the effort.
-
-That being said we appreciate any messages about potential threats because you never know if they could be bigger than you think.
+We aim to respond to critical vulnerabilities within 48-72 hours and provide a fix or mitigation within one week. We appreciate your help in keeping ZuriMarket secure.

@@ -1,87 +1,90 @@
-[![Deploy To Production](https://github.com/openpredictionmarkets/socialpredict/actions/workflows/deploy-to-production.yml/badge.svg)](https://github.com/openpredictionmarkets/socialpredict/actions/workflows/deploy-to-production.yml)
-
-[![Deploy To Staging](https://github.com/openpredictionmarkets/socialpredict/actions/workflows/deploy-to-staging.yml/badge.svg)](https://github.com/openpredictionmarkets/socialpredict/actions/workflows/deploy-to-staging.yml)
-
-# SocialPredict
+# ZuriMarket
 
 ## The open prediction market engine for everyone
 
-SocialPredict lets **anyone** – individuals, classrooms, companies, and even governments – tap into the power of prediction markets.
-
-### Setting Up SocialPredict Website with HTTPS on a Virtual Private Computer
-
-![socialpredict_setup_demo](https://github.com/user-attachments/assets/1062a3b2-46d0-4a40-a648-39e71f0e7cec)
-
-### SocialPredict Logging In and Creating Market
-
-![socialpredict_demo_3x](https://github.com/user-attachments/assets/438bb424-670b-4cd3-a69f-5581c4d9fcbf)
+ZuriMarket is a powerful, self-hosted prediction market engine designed to let anyone – individuals, classrooms, companies, and communities – tap into the collective intelligence of prediction markets.
 
 ---
 
-### Join us in shaping the future of prediction markets by building connections and expertise within your community!
+## 🚀 Features at a Glance
 
-## Used By
+### Core Platform
+- **Kinetic Ledger**: Real-time sentiment and betting engine for dynamic odds calculation.
+- **Market Types**: Support for **Binary** (Yes/No) and **Multiple Choice** (3+ outcomes) markets.
+- **Discovery**: Landing page grid with filtering by category (Crypto, Politics, Sports, Business) and status.
+- **Social & Gamification**: Global and per-market leaderboards, activity feeds, and detailed user profiles.
 
-<img src="https://github.com/openpredictionmarkets/socialpredict/raw/main/README/IMG/logotype_kenyon-purple_rgb.png" alt = "Kenyon College Logo" width=40% height=40%>
-
-* Kenyon College (Political Science course PSCI 303, Campaigns & Elections; syllabus [here](https://www.zacharymcgee.net/syllabi/PSCI_303_public.pdf))
-                        
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/openpredictionmarkets/socialpredict.svg?variant=adaptive)](https://starchart.cc/openpredictionmarkets/socialpredict)
-
-## Licensing
-
-SocialPredict is available under the [MIT License](https://github.com/openpredictionmarkets/socialpredict/blob/main/LICENSE).
+### Security & Infrastructure
+- **JWT Authentication**: Secure, stateless user access management.
+- **Input Sanitization**: Protection against XSS (Bluemonday) and structured input validation.
+- **Modern Design**: High-contrast dark aesthetic using **Space Grotesk** and **Satoshi** typography.
+- **Admin Dashboard**: Full control over user creation, market resolution, and homepage CMS.
 
 ---
 
-## Roadmap at a Glance
+## 🛠️ Tech Stack
 
-We’re building SocialPredict as the **best free prediction-market infrastructure** you can run yourself — today and into the future.
+| Layer | Technology |
+|---|---|
+| **Backend** | Go 1.25+, Gorilla Mux, GORM |
+| **Database** | PostgreSQL (Production), SQLite (Local/Dev) |
+| **Frontend** | React 18, Vite, Tailwind CSS |
+| **Charts** | Chart.js, Recharts, CanvasJS |
+| **Auth** | JWT (golang-jwt), bcrypt passwords |
+| **Infra** | Docker, Nginx, Traefik |
+
+---
+
+## 📅 Roadmap
+
+We’re building ZuriMarket as the best free prediction-market infrastructure you can run yourself.
 
 ```mermaid
 flowchart LR
-
     classDef roadmap fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:2px;
-
     Y2025["🧩 Service Architecture<br/>2025"]
     Y2026["🧱 Microservices & Math<br/>2026"]
     Y2027["☁️ Cloud & UX<br/>2027"]
     Y2030["🚀 HPC & Analytics<br/>2028–2030"]
-
     Y2025 --> Y2026 --> Y2027 --> Y2030
-
     class Y2025,Y2026,Y2027,Y2030 roadmap
 ```
 
+### Current Priorities
+1. **Critical Integrity**: Implementing DB transactions for all financial operations.
+2. **Security Hardening**: Hardening JWT secrets, CORS policies, and SSL defaults.
+3. **User Flow**: Self-service registration with email verification.
+4. **Governance**: Market submission queue and admin approval workflow.
+
 ---
 
-## Staging
-
-Check out our staging instance at [BrierFoxForecast](https://brierfoxforecast.com/) to see what our software looks like in action. May be down if we are testing something.
-
-## Getting Started
+## 🏁 Getting Started
 
 ### Setting up a Local Instance
-
 - [Info on Local Setup](/README/LOCAL_SETUP.md)
-- [Info on How Economics Can Be Customized](/README/README-CONFIG.md)
+- [Economics Customization](/README/README-CONFIG.md)
 
 ### Deploying to the Web
+- [Stage Setup Guide](/README/STAGE_SETUP.md)
 
-- [How to Set Up Your Own Website](/README/STAGE_SETUP.md)
+### How Prediction Markets Work
+Check out our quick primer on [how (and why) prediction markets work](/README/MATH/README-MATH.md).
 
-### How Do Prediction Markets Work?
+---
 
-Here's a quick primer about how (and why) [prediction markets work](/README/MATH/README-MATH.md). Want more info? We maintain a list of resources where you can see research on [prediction markets in action](https://github.com/openpredictionmarkets/resources).
+## ⚖️ Licensing
 
-## Contributing
+ZuriMarket is available under the [MIT License](/LICENSE).
 
-We welcome and appreciate every contribution. Get started by reading our [guide](https://github.com/openpredictionmarkets/socialpredict/blob/main/CONTRIBUTING.md) and make sure to follow our [Code of Conduct](https://github.com/openpredictionmarkets/socialpredict/blob/main/CODE_OF_CONDUCT.md).
+---
 
-### Where to Next?
+## 🤝 Contributing
 
-- Brush up on our [Development Conventions](/README/README-CONVENTIONS.md)
-- Check out our [ongoing Projects](https://github.com/openpredictionmarkets/socialpredict/projects?query=is%3Aopen)
-- Look at our [Issues](https://github.com/openpredictionmarkets/socialpredict/issues)
-- Have your say on [GitHub Discussions](https://github.com/orgs/openpredictionmarkets/discussions)
+We welcome contributions! Get started by reading our [guide](/CONTRIBUTING.md) and following our [Code of Conduct](/CODE_OF_CONDUCT.md).
+
+---
+
+## 📍 Where to Next?
+- [Development Conventions](/README/README-CONVENTIONS.md)
+- [Ongoing Projects](../../projects)
+- [Issues](../../issues)

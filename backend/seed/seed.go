@@ -60,7 +60,17 @@ func SeedUsers(db *gorm.DB) {
 			adminUser.HashPassword(adminPassword)
 
 			db.Create(&adminUser)
-
+		} else {
+			// Admin user exists, ensure role and verification are correct
+			var adminUser models.User
+			db.Where("username = ?", "admin").First(&adminUser)
+			if adminUser.Role != models.RoleAdmin || !adminUser.IsVerified {
+				adminUser.Role = models.RoleAdmin
+				adminUser.UserType = models.RoleAdmin
+				adminUser.IsVerified = true
+				db.Save(&adminUser)
+				log.Println("[Seed] Updated existing admin user to ADMIN role and verified status.")
+			}
 		}
 	}
 
