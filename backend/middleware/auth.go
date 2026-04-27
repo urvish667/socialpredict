@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"os"
 	"socialpredict/models"
 	"socialpredict/util"
 	"strings"
@@ -64,6 +65,16 @@ func RequireAdminUser(next http.Handler) http.Handler {
 		if !IsAdmin(user) {
 			http.Error(w, "Admin access required", http.StatusForbidden)
 			return
+		}
+
+		// Additional Secret Key check for extra security
+		adminSecret := os.Getenv("ADMIN_SECRET_KEY")
+		if adminSecret != "" {
+			providedSecret := r.Header.Get("X-Admin-Secret")
+			if providedSecret != adminSecret {
+				http.Error(w, "Invalid admin secret key", http.StatusForbidden)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), authenticatedUserKey, user)
