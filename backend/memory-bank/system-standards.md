@@ -25,4 +25,4 @@ This document outlines the coding and system-level standards for developing the 
 ## Security Standards
 - Always validate incoming JSON payloads using the validator package.
 - Sanitize any user-provided HTML/Markdown content before saving to the database.
-- Use the `middleware.Authenticate` wrapper for any route requiring user authorization.
+- Use the `middleware.Authenticate` wrapper for any route requiring user authorization, and `middleware.ValidateAdminToken` for privileged administrative actions.

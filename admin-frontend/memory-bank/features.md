@@ -7,10 +7,15 @@
   - **Multiple Choice**: 3 or more defined outcomes.
 - **Market Details**: Deep dive into individual markets, showing odds, probability charts, and trading interface.
 - **Resolution**: Markets have a resolution date and time, after which they are closed and resolved.
-
 ## User & Authentication
 - **User Accounts**: Registration (SignupFlow), login, profile settings, and password management.
-- **Admin Dashboard**: Restricted area for users with `ADMIN` usertype.
+- **Admin Dashboard**: Comprehensive management interface for `ADMIN` users.
+  - **Command Center**: Real-time system health and platform statistics.
+  - **User Registry**: Advanced user management with role updates and banning.
+  - **Market Liquidation**: Moderation interface for supervising and deleting markets.
+  - **Transaction Ledger**: Global audit log of all betting activities.
+  - **Identity Provisioning**: Form for manual user/admin creation.
+  - **Economic Policy**: UI for updating live platform economic constraints.
 - **Wallet & Portfolio**: Track user's coin balance, bet history, and current active portfolio.
 
 ## Social & Gamification

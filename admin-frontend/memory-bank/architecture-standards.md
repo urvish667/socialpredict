@@ -10,10 +10,10 @@
 ## Project Structure
 - `src/api/`: API layer abstraction for backend communication (e.g., `marketsApi.js`).
 - `src/assets/`: Static assets, SVGs, and images.
-- `src/components/`: Reusable UI components organized by feature (e.g., markets, modals, sidebar, inputs).
+- `src/components/`: Reusable UI components organized by feature (e.g., markets, modals, sidebar, inputs). Includes `layouts/admin/` for dashboard-specific sections.
 - `src/helpers/`: Utility components and context providers (e.g., `AuthContent.jsx`, `AppRoutes.jsx`).
 - `src/hooks/`: Custom React hooks for encapsulating logic and state (e.g., `useMarketDetails`, `usePortfolio`, `useUserData`).
-- `src/pages/`: Top-level page components mapping to routes.
+- `src/pages/`: Top-level page components mapping to routes. Admin-specific pages are located in `src/pages/admin/`.
 - `src/utils/`: Utility functions (e.g., `CurrencyUtils.jsx`, `labelMapping.js`, `statusMap.js`).
 
 ## State Management

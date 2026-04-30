@@ -6,7 +6,7 @@ This document defines the core architectural patterns and design decisions for t
 The backend is built in Go (module: `socialpredict`) and exposes an HTTP REST API. It follows a modular directory structure, separating concerns like routing, database interactions, middleware, and business logic.
 
 ## Directory Structure & Responsibilities
-- `handlers/`: HTTP request handlers/controllers that manage incoming requests and outgoing responses.
+- `handlers/`: HTTP request handlers/controllers. Contains an `admin/` sub-package for restricted management APIs.
 - `models/`: Database schema definitions using GORM.
 - `middleware/`: HTTP middleware, providing authentication, CORS handling, and request logging.
 - `server/`: Application routing (`gorilla/mux`) and HTTP server lifecycle management.

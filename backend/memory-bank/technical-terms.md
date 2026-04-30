@@ -11,4 +11,8 @@ This glossary defines common terminology used within the Zurimarket domain and t
 - **JWT (JSON Web Token)**: Used for stateless user authentication. The token contains a payload with the user's identity and is signed securely.
 
 ## Domain Specific
-*(Add any Zurimarket or SocialPredict specific business terminology here as the project evolves)*
+- **Role-Based Access Control (RBAC)**: Implementation of user roles (`USER`, `ADMIN`) to restrict access to sensitive endpoints.
+- **System Health Metrics**: Real-time stats providing visibility into platform volume and user growth.
+- **Audit Log**: A historical record of all critical system actions, specifically betting transactions in the current version.
+- **Economic Policy**: A set of configurable rules governing the platform's economy, including costs for market creation and eligibility requirements.
+- **Identity Provisioning**: The administrative process of manually creating and onboarding new users or administrators.

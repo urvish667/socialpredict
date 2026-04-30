@@ -10,3 +10,7 @@
 - **ZuriMarket**: The brand/platform name. Also referred to in components (e.g., `ZuriMarketCard`).
 - **Kinetic Ledger**: Conceptual term used in the platform UI to describe the real-time sentiment/betting engine.
 - **Binary Labels**: Custom text labels substituting "YES" and "NO" (e.g., "BULL" vs "BEAR") for better contextual mapping.
+- **Command Center**: The primary admin view for system health monitoring.
+- **Audit Log / Transaction Ledger**: A historical view of all bets placed on the platform, used for administrative oversight.
+- **Economic Policy**: The set of rules (e.g., Min Balance, Market Creation Cost) that can be adjusted by admins to tune platform economics.
+- **Identity Provisioning**: The administrative process of manually creating and onboarding new users or administrators.
