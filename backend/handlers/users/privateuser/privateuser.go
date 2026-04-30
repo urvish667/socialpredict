@@ -7,6 +7,7 @@ import (
 	"socialpredict/middleware"
 	"socialpredict/models"
 	"socialpredict/util"
+	"gorm.io/gorm"
 )
 
 type CombinedUserResponse struct {
@@ -31,6 +32,7 @@ type CombinedUserResponse struct {
 	RealBalance           int64  `json:"realBalance"`
 	ReferralCode          string `json:"referralCode"`
 	CurrentStreak         int    `json:"currentStreak"`
+	TradeCount            int64  `json:"tradeCount"`
 }
 
 func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +82,15 @@ func GetPrivateProfileUserResponse(w http.ResponseWriter, r *http.Request) {
 		RealBalance:           publicInfo.RealBalance,
 		ReferralCode:          publicInfo.ReferralCode,
 		CurrentStreak:         publicInfo.CurrentStreak,
+		TradeCount:            getTradeCount(db, username),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func getTradeCount(db *gorm.DB, username string) int64 {
+	var count int64
+	db.Model(&models.Bet{}).Where("username = ?", username).Count(&count)
+	return count
 }

@@ -13,7 +13,7 @@ const MarketGrid = ({ category = 'all', status = 'active', searchQuery = '' }) =
             setLoading(true);
             try {
                 // Determine endpoint based on status
-                let endpoint = status === 'active' ? 'active' : (status === 'ending' ? 'active' : 'closed');
+                let endpoint = (status === 'active' || status === 'new' || status === 'ending') ? 'active' : 'closed';
                 let url = `${API_URL}/v0/markets/${endpoint}`;
                 
                 const response = await fetch(url);

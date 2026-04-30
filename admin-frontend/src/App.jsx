@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './helpers/AuthContent';
 import Footer from './components/footer/Footer';
 import AppRoutes from './helpers/AppRoutes';
 import '../index.css';
-import TopNavbar from './components/header/TopNavbar';
+import Sidebar from './components/layouts/admin/Sidebar';
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -40,13 +40,12 @@ function AppLayout() {
     );
   }
 
-  // Unified Layout for the app without Sidebar
   return (
-    <div className='App bg-[#0b0f0e] min-h-screen text-on-surface font-body font-satoshi antialiased flex flex-col'>
-      <TopNavbar />
-      <div className='flex flex-grow overflow-hidden'>
-        <main className={`flex-grow overflow-y-auto`}>
-          <div className='max-w-[1440px] mx-auto w-full'>
+    <div className='App bg-[#0b0f0e] min-h-screen text-on-surface font-body font-satoshi antialiased flex'>
+      <Sidebar />
+      <div className='flex flex-col flex-grow min-h-screen overflow-hidden border-l border-white/5'>
+        <main className='flex-grow overflow-y-auto bg-[#0b0f0e]'>
+          <div className='w-full'>
             <AppRoutes />
           </div>
         </main>

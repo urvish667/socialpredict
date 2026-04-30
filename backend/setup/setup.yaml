@@ -5,8 +5,11 @@ economics:
     initialMarketYes: 0
     initialMarketNo: 0
     minimumFutureHours: 1.0
+    minTradesRequired: 5
+    minAccountAgeDays: 3
+    maxMarketsPerDay: 1
   marketincentives:
-    createMarketCost: 10
+    createMarketCost: 25000
     traderBonus: 1
   user:
     initialAccountBalance: 25000

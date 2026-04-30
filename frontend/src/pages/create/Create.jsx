@@ -47,8 +47,58 @@ function Create() {
   const [options, setOptions] = useState(['', '', '']); // Min 3 options for MC
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { username } = useAuth();
+  const { username, token } = useAuth();
   const history = useHistory();
+
+  // Economic validation states
+  const [econConfig, setEconConfig] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [isLoadingCriteria, setIsLoadingCriteria] = useState(true);
+
+  // Fetch criteria and user stats
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingCriteria(true);
+      try {
+        const [econRes, userRes] = await Promise.all([
+          fetch(`${API_URL}/v0/setup`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/v0/privateprofile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (econRes.ok) {
+          const econData = await econRes.json();
+          setEconConfig(econData);
+        }
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUserStats(userData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch market creation criteria:", err);
+      } finally {
+        setIsLoadingCriteria(false);
+      }
+    };
+
+    if (token) {
+      fetchData();
+    }
+  }, [token]);
+
+  const minTrades = econConfig?.marketcreation?.minTradesRequired || 0;
+  const creationCostCents = econConfig?.marketincentives?.createMarketCost || 0;
+  const creationCostCoins = creationCostCents / 100;
+  
+  const userBalanceCents = userStats?.virtualBalance || 0;
+  const userTrades = userStats?.tradeCount || 0;
+
+  const hasEnoughBalance = userBalanceCents >= creationCostCents;
+  const hasEnoughTrades = userTrades >= minTrades;
+  const isEligible = hasEnoughBalance && hasEnoughTrades;
 
   const addOption = () => {
     if (options.length < 10) {
@@ -185,6 +235,64 @@ function Create() {
           Launch a prediction market for the community
         </p>
       </div>
+
+      {/* Eligibility Status Card */}
+      {!isLoadingCriteria && econConfig && (
+        <div className={`mb-8 border p-6 backdrop-blur-md ${isEligible ? 'border-[#ddff5c]/20 bg-[#ddff5c]/5' : 'border-red-500/20 bg-red-500/5'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <span className={`material-symbols-outlined text-sm ${isEligible ? 'text-[#ddff5c]' : 'text-red-400'}`}>
+              {isEligible ? 'verified_user' : 'warning'}
+            </span>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Market Creation Criteria</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <div className="flex justify-between items-end">
+                <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Capital Required</span>
+                <span className={`text-[10px] font-black ${hasEnoughBalance ? 'text-[#ddff5c]' : 'text-red-400'}`}>
+                  {creationCostCoins} COINS
+                </span>
+              </div>
+              <div className="h-1 bg-white/5 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-1000 ${hasEnoughBalance ? 'bg-[#ddff5c]' : 'bg-red-500'}`} 
+                  style={{ width: `${Math.min(100, (userBalanceCents / (creationCostCents || 1)) * 100)}%` }}
+                ></div>
+              </div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-white/20">
+                You have: {(userBalanceCents / 100).toFixed(2)} COINS
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex justify-between items-end">
+                <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Trade History</span>
+                <span className={`text-[10px] font-black ${hasEnoughTrades ? 'text-[#ddff5c]' : 'text-red-400'}`}>
+                  {minTrades} TRADES
+                </span>
+              </div>
+              <div className="h-1 bg-white/5 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-1000 ${hasEnoughTrades ? 'bg-[#ddff5c]' : 'bg-red-500'}`} 
+                  style={{ width: `${Math.min(100, (userTrades / (minTrades || 1)) * 100)}%` }}
+                ></div>
+              </div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-white/20">
+                You have: {userTrades} TRADES
+              </p>
+            </div>
+          </div>
+
+          {!isEligible && (
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <p className="text-[9px] font-black uppercase tracking-widest text-red-400/80 leading-relaxed">
+                Insufficient resources. You must increase your trade volume or balance before establishing new markets.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Market Type Selection */}
@@ -430,10 +538,10 @@ function Create() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isEligible}
           className="w-full py-4 bg-[#ddff5c] text-[#0b0f0e] text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
         >
-          {isSubmitting ? 'Creating Market...' : 'Create Market'}
+          {isSubmitting ? 'Creating Market...' : !isEligible ? 'Requirements Not Met' : 'Create Market'}
         </button>
       </form>
     </div>

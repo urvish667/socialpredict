@@ -132,6 +132,9 @@ func ValidateTokenAndGetUser(r *http.Request, db *gorm.DB) (*models.User, *HTTPE
 		if result.Error != nil {
 			return nil, &HTTPError{StatusCode: http.StatusNotFound, Message: "User not found"}
 		}
+		if user.IsBanned {
+			return nil, &HTTPError{StatusCode: http.StatusForbidden, Message: "User account is banned"}
+		}
 		return &user, nil
 	}
 	return nil, &HTTPError{StatusCode: http.StatusUnauthorized, Message: "Invalid token"}

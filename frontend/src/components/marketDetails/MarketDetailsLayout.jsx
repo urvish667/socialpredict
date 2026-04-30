@@ -26,6 +26,7 @@ function MarketDetailsTable({
   optionProbabilities = {},
   marketId,
   username,
+  usertype,
   isLoggedIn,
   token,
   refetchData,
@@ -153,7 +154,7 @@ function MarketDetailsTable({
                 >
                   <span className='material-symbols-outlined text-white/40 group-hover:text-white text-sm'>bookmark</span>
                 </button>
-                {username === market.creatorUsername && !market.isResolved && (
+                {(username === market.creatorUsername || usertype === 'ADMIN') && !market.isResolved && (
                   <ResolveModalButton
                     marketId={marketId}
                     token={token}

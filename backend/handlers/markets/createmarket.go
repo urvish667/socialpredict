@@ -67,6 +67,9 @@ func checkQuestionTitleLength(title string) error {
 }
 
 func checkQuestionDescriptionLength(description string) error {
+	if len(strings.TrimSpace(description)) < 1 {
+		return errors.New("question description cannot be blank")
+	}
 	if len(description) > 2000 {
 		return errors.New("question description exceeds 2000 characters")
 	}
@@ -251,22 +254,59 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 			}
 
 			appConfig := loadEconConfig()
+
+			// Debug logging for role
+			log.Printf("CreateMarket: User=%s, Role=%s, IsAdmin=%v", user.Username, user.Role, middleware.IsAdmin(user))
+
+			// Only apply constraints to non-admin users
+			if !middleware.IsAdmin(user) {
+				// Check minimum trades required
+				var tradeCount int64
+				if err := tx.Model(&models.Bet{}).Where("username = ?", user.Username).Count(&tradeCount).Error; err != nil {
+					return fmt.Errorf("error checking trade count: %w", err)
+				}
+				
+				log.Printf("CreateMarket: User %s has %d trades", user.Username, tradeCount)
+
+				if int(tradeCount) < appConfig.Economics.MarketCreation.MinTradesRequired {
+					return fmt.Errorf("at least %d trades are required to create a market. You have %d", appConfig.Economics.MarketCreation.MinTradesRequired, tradeCount)
+				}
+
+				// Check account age
+				accountAge := time.Since(user.CreatedAt)
+				minAge := time.Duration(appConfig.Economics.MarketCreation.MinAccountAgeDays) * 24 * time.Hour
+				if accountAge < minAge {
+					daysRemaining := (minAge - accountAge).Hours() / 24
+					return fmt.Errorf("account age must be at least %d days. Please wait %.1f more days", appConfig.Economics.MarketCreation.MinAccountAgeDays, daysRemaining)
+				}
+
+				// Check market creation limit (max per day)
+				var marketsToday int64
+				oneDayAgo := time.Now().Add(-24 * time.Hour)
+				if err := tx.Model(&models.Market{}).Where("creator_id = ? AND created_at > ?", user.ID, oneDayAgo).Count(&marketsToday).Error; err != nil {
+					return fmt.Errorf("error checking daily market limit: %w", err)
+				}
+				if int(marketsToday) >= appConfig.Economics.MarketCreation.MaxMarketsPerDay {
+					return fmt.Errorf("you have reached your daily market creation limit of %d", appConfig.Economics.MarketCreation.MaxMarketsPerDay)
+				}
+
+				marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
+
+				// Atomic conditional deduction:
+				// Ensure user has at least the fee amount without going into debt
+				res := tx.Model(&models.User{}).
+					Where("username = ? AND virtual_balance >= ?", user.Username, marketCreateFee).
+					UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", marketCreateFee))
+				if res.Error != nil {
+					return res.Error
+				}
+				if res.RowsAffected == 0 {
+					return fmt.Errorf("insufficient balance. A fee of %d coins (%d cents) is required to create a market", marketCreateFee/100, marketCreateFee)
+				}
+			}
+
 			if err = validateMarketResolutionTime(newMarket.ResolutionDateTime, appConfig); err != nil {
 				return err
-			}
-
-			marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
-			maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
-
-			// Atomic conditional deduction:
-			res := tx.Model(&models.User{}).
-				Where("username = ? AND virtual_balance - ? >= ?", user.Username, marketCreateFee, -maximumDebtAllowed).
-				UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", marketCreateFee))
-			if res.Error != nil {
-				return res.Error
-			}
-			if res.RowsAffected == 0 {
-				return fmt.Errorf("insufficient balance")
 			}
 
 			if err := tx.Create(&newMarket).Error; err != nil {

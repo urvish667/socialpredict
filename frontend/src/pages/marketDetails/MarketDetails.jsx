@@ -5,7 +5,7 @@ import { useAuth } from '../../helpers/AuthContent';
 import LoadingSpinner from '../../components/loaders/LoadingSpinner';
 
 const MarketDetails = () => {
-  const { username } = useAuth();
+  const { username, usertype } = useAuth();
   const { details, isLoggedIn, token, refetchData, currentProbability, optionProbabilities } =
     useMarketDetails();
 
@@ -27,6 +27,7 @@ const MarketDetails = () => {
           optionProbabilities={optionProbabilities}
           marketId={details.market.id}
           username={username}
+          usertype={usertype}
           isLoggedIn={isLoggedIn}
           token={token}
           refetchData={refetchData}

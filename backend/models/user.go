@@ -23,6 +23,7 @@ type User struct {
 	PrivateUser
 	Role               string `json:"role" gorm:"not null;default:USER"`
 	IsVerified         bool   `json:"isVerified" gorm:"default:false"`
+	IsBanned           bool   `json:"isBanned" gorm:"default:false"`
 	MustChangePassword bool   `json:"mustChangePassword" gorm:"default:false"`
 }
 

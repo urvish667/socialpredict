@@ -135,7 +135,7 @@ func buildCORSFromEnv() *cors.Cors {
 	}
 
 	methods := getListEnv("CORS_ALLOW_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-	headers := getListEnv("CORS_ALLOW_HEADERS", "Content-Type,Authorization")
+	headers := getListEnv("CORS_ALLOW_HEADERS", "Content-Type,Authorization,X-Admin-Secret")
 	expose := getListEnv("CORS_EXPOSE_HEADERS", "")
 	allowCreds := getBoolEnv("CORS_ALLOW_CREDENTIALS", false)
 	maxAge := getIntEnv("CORS_MAX_AGE", 600)
@@ -244,6 +244,18 @@ func Start() {
 
 	router.HandleFunc("/v0/content/home", homepageHandler.PublicGet).Methods("GET")
 	router.Handle("/v0/admin/content/home", adminRoute(homepageHandler.AdminUpdate)).Methods("PUT")
+
+	// New Admin Dashboard Routes
+	router.Handle("/v0/admin/users", adminRoute(adminhandlers.ListUsersHandler)).Methods("GET")
+	router.Handle("/v0/admin/users/{username}", adminRoute(adminhandlers.GetUserDetailHandler)).Methods("GET")
+	router.Handle("/v0/admin/users/{username}/role", adminRoute(adminhandlers.UpdateUserRoleHandler)).Methods("PUT")
+	router.Handle("/v0/admin/users/{username}/ban", adminRoute(adminhandlers.UpdateUserBanHandler)).Methods("PUT")
+	router.Handle("/v0/admin/markets", adminRoute(adminhandlers.ListMarketsHandler)).Methods("GET")
+	router.Handle("/v0/admin/markets/{id}", adminRoute(adminhandlers.DeleteMarketHandler)).Methods("DELETE")
+	router.Handle("/v0/admin/bets", adminRoute(adminhandlers.ListBetsHandler)).Methods("GET")
+	router.Handle("/v0/admin/system/health", adminRoute(adminhandlers.ExtendedHealthHandler)).Methods("GET")
+	router.Handle("/v0/admin/economics", adminRoute(adminhandlers.GetEconomicsHandler)).Methods("GET")
+	router.Handle("/v0/admin/economics", adminRoute(adminhandlers.UpdateEconomicsHandler)).Methods("PUT")
 
 	// Apply body size limit (outermost layer — before CORS and routing)
 	// Apply CORS middleware if enabled

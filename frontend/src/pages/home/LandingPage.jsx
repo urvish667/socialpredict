@@ -34,7 +34,7 @@ const LandingPage = () => {
                             
                             {/* Tabs for Sorting (Sharp) */}
                             <div className="flex items-center bg-white/5 border border-white/5 p-1 rounded-none w-full md:w-auto overflow-x-auto no-scrollbar">
-                                {['active', 'new', 'ending'].map((status) => (
+                                {['active', 'new', 'ending', 'closed'].map((status) => (
                                     <button 
                                         key={status}
                                         onClick={() => setMarketStatus(status)}
